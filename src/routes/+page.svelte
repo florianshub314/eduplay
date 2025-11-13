@@ -14,6 +14,7 @@
   <div class="buttons">
     <button on:click={() => selectSubject('Mathematik')}>📘 Mathematik</button>
     <button on:click={() => selectSubject('Englisch')}>📗 Englisch</button>
+    <button on:click={() => goto('/deutsch')}>📙 Deutsch</button>
   </div>
 </main>
 
