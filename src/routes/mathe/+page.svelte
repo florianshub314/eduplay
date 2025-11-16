@@ -2,13 +2,14 @@
   import { goto } from '$app/navigation';
 
   // =========================================
-  //              KONFIGURATION
+  //              EINSTELLUNGEN
   // =========================================
   let numQuestions = 10;
-  let file = null;
-
   let minNumber = 1;
   let maxNumber = 10;
+
+  let file = null;
+
   let useDecimals = false;
   let allowNegatives = false;
 
@@ -29,7 +30,7 @@
   let gameOver = false;
   let currentQuestionIndex = 0;
 
-  let ballPosition = 0; // Mitte
+  let ballPosition = 0; // 0 = Mitte
   let redScore = 0;
   let blueScore = 0;
 
@@ -49,15 +50,14 @@
   }
 
   // =========================================
-  //              RANDOM NUMBERS
+  //              RANDOM FUNKTIONEN
   // =========================================
   function randomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   function randomDec(min, max) {
-    const v = Math.random() * (max - min) + min;
-    return parseFloat(v.toFixed(1));
+    return parseFloat((Math.random() * (max - min) + min).toFixed(1));
   }
 
   function pickNumber(min, max, decimals) {
@@ -69,7 +69,7 @@
   }
 
   // =========================================
-  //         AUFGABEN GENERATOR
+  //           MATHE AUFGABEN-GENERATOR
   // =========================================
   function buildQuestion(ops, {
     min = 1,
@@ -77,7 +77,7 @@
     decimals = false,
     allowNeg = false
   }) {
-    const MAX_TRIES = 300;
+    const MAX_TRIES = 200;
 
     for (let t = 0; t < MAX_TRIES; t++) {
       const op = ops[Math.floor(Math.random() * ops.length)];
@@ -97,7 +97,7 @@
       if (op === '/') {
         if (!decimals) {
           b = b === 0 ? 1 : b;
-          const k = randomInt(1, Math.max(1, Math.floor(max / b)));
+          const k = randomInt(1, Math.floor(max / b));
           a = b * k;
           result = a / b;
         } else {
@@ -106,7 +106,6 @@
       }
 
       if (!allowNeg && result < 0) continue;
-
       if (!withinRange(result, min, max)) continue;
       if (!withinRange(a, min, max)) continue;
       if (!withinRange(b, min, max)) continue;
@@ -117,9 +116,12 @@
     return `${min} + ${min}`;
   }
 
+  // =========================================
+  //          AUFGABEN ERSTELLEN
+  // =========================================
   function generateQuestions() {
     questions = [];
-    const ops = Array.from(selectedOps);
+    const ops = [...selectedOps];
 
     for (let i = 0; i < numQuestions; i++) {
       questions.push(
@@ -138,24 +140,25 @@
   }
 
   // =========================================
-  //               SPIELLOGIK
+  //             SPIELLOGIK
   // =========================================
   function moveBall(team) {
     if (team === 'red') {
       ballPosition--;
       if (ballPosition <= -4) {
         redScore++;
-        showMessage('⚽️ TOR für Team Rot!');
+        showMessage("⚽️ TOR für Team Rot!");
         resetField();
       }
     } else {
       ballPosition++;
       if (ballPosition >= 4) {
         blueScore++;
-        showMessage('⚽️ TOR für Team Blau!');
+        showMessage("⚽️ TOR für Team Blau!");
         resetField();
       }
     }
+
     nextQuestion();
   }
 
@@ -165,7 +168,9 @@
 
     timerInterval = setInterval(() => {
       timer--;
-      if (timer <= 0) stopTimer();
+      if (timer <= 0) {
+        stopTimer();
+      }
     }, 1000);
   }
 
@@ -176,7 +181,6 @@
 
   function nextQuestion() {
     stopTimer();
-
     if (currentQuestionIndex < questions.length - 1) {
       currentQuestionIndex++;
     } else {
@@ -198,13 +202,19 @@
     else showMessage("🤝 Unentschieden!");
   }
 
-  function handleFileUpload(e) {
-    file = e.target.files[0];
+  function forceEndGame() {
+    gameStarted = false;
+    gameOver = true;
+    showMessage("🛑 Spiel wurde manuell beendet!");
   }
 
   function toggleOperation(op) {
     if (selectedOps.has(op)) selectedOps.delete(op);
     else selectedOps.add(op);
+  }
+
+  function handleFileUpload(e) {
+    file = e.target.files[0];
   }
 
   function goBack() {
@@ -213,8 +223,9 @@
 </script>
 
 <!-- ========================================= -->
-<!--                HTML UI                    -->
+<!--                  UI – MENU                -->
 <!-- ========================================= -->
+
 <main>
   {#if !gameStarted && !gameOver}
     <h1>Mathematik – Wandtafelspiel</h1>
@@ -252,12 +263,12 @@
         </div>
 
         <label>
-          <input id="dezimal" type="checkbox" bind:checked={useDecimals} />
+          <input type="checkbox" bind:checked={useDecimals} />
           Dezimalzahlen erlauben
         </label>
 
         <label>
-          <input id="negativ" type="checkbox" bind:checked={allowNegatives} />
+          <input type="checkbox" bind:checked={allowNegatives} />
           Negative Ergebnisse erlauben
         </label>
       {/if}
@@ -265,9 +276,10 @@
       <button on:click={generateQuestions}>Spiel starten</button>
     </div>
 
-    <button class="back" on:click={goBack}>⬅️ Zurück</button>
+    <button class="back" on:click={goBack}>Zurück</button>
 
   {:else if gameStarted}
+
     <h2>Frage {currentQuestionIndex + 1} von {questions.length}</h2>
     <h1>{questions[currentQuestionIndex]}</h1>
 
@@ -292,10 +304,12 @@
       <button class="redBtn" on:click={() => moveBall('red')}>🔴 Team Rot</button>
       <button class="blueBtn" on:click={() => moveBall('blue')}>🔵 Team Blau</button>
       <button class="wrongBtn" on:click={wrongAnswer}>❌ Falsch</button>
-      <button class="skipBtn" on:click={nextQuestion}>⏭ Skip</button>
+      <button class="skipBtn" on:click={nextQuestion}>Überspringen</button>
+      <button class="endBtn" on:click={forceEndGame}>🛑 Spiel beenden</button>
     </div>
 
   {:else}
+
     <h1>Spiel beendet</h1>
 
     {#if redScore > blueScore}
@@ -313,6 +327,7 @@
 
     <button on:click={generateQuestions}>🔁 Neues Spiel starten</button>
     <button class="back" on:click={goBack}>⬅️ Zurück</button>
+
   {/if}
 
   {#if showPopup}
@@ -323,6 +338,7 @@
 <!-- ========================================= -->
 <!--                  STYLES                   -->
 <!-- ========================================= -->
+
 <style>
   main {
     display: flex;
@@ -342,7 +358,7 @@
     padding: 2rem;
     border-radius: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    text-align: left;
+    width: 360px;
   }
 
   .range input {
@@ -351,8 +367,8 @@
 
   .ops {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1rem;
+    flex-direction: column;
+    gap: 0.3rem;
   }
 
   .fileInfo {
@@ -375,6 +391,7 @@
     text-align: center;
     font-weight: bold;
   }
+
   .goal.red { color: #dc2626; }
   .goal.blue { color: #2563eb; }
 
@@ -388,15 +405,14 @@
 
   .ball {
     position: absolute;
-    top: 
-50%;
+    top: 50%;
     transform: translate(-50%, -50%);
     width: 26px;
     height: 26px;
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, white 40%, black 42%);
-    border: 2px solid #222;
-    transition: left 0.3s ease-in-out;
+    border: 2px solid black;
+    transition: left 0.25s ease-in-out;
   }
 
   .scores {
@@ -430,6 +446,7 @@
   .blueBtn { background: #2563eb; }
   .wrongBtn { background: #f59e0b; color: black; }
   .skipBtn { background: #6b7280; }
+  .endBtn { background: #0f172a; }
 
   .timer {
     font-size: 1.5rem;
@@ -460,7 +477,6 @@
     padding: 1rem 2rem;
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    z-index: 1000;
     animation: fadein 0.3s, fadeout 0.5s 2s;
   }
 
