@@ -32,18 +32,18 @@
   <p>Wähle ein Fach und gib optional Teamnamen ein.</p>
 
   <div class="field">
-    <label>Team 1 Name</label>
-    <input placeholder="Team Blau" bind:value={team1} />
+    <label for="team1-name">Team 1 Name</label>
+    <input id="team1-name" placeholder="Team Blau" bind:value={team1} />
   </div>
 
   <div class="field">
-    <label>Team 2 Name</label>
-    <input placeholder="Team Rot" bind:value={team2} />
+    <label for="team2-name">Team 2 Name</label>
+    <input id="team2-name" placeholder="Team Rot" bind:value={team2} />
   </div>
 
   <div class="field">
-    <label>Fach</label>
-    <select bind:value={selectedSubject}>
+    <label for="subject-select">Fach</label>
+    <select id="subject-select" bind:value={selectedSubject}>
       {#each subjects as s}
         <option value={s.id}>{s.label}</option>
       {/each}

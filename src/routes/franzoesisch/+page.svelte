@@ -1,175 +1,138 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto } from "$app/navigation";
   import SoccerField from "$lib/components/game/SoccerField.svelte";
   import { onDestroy } from "svelte";
 
-  // =========================================
-  //              KONFIGURATION
-  // =========================================
   let numQuestions = 10;
   let file = null;
 
-  // Manuelle Aufgaben
-  let manualInput = "";
   let useManualInput = false;
-  let customTasks = [];
+  let manualInput = "";
+  let sourceLines = [];
 
-  // Aufgabentypen wie gewünscht
-  let taskTypes = {
-    syllables: false,
-    capitalization: false,
-    articles: false
-  };
-
-  // Listen für automatische Aufgaben
-  const syllableWords = [
-    "Elefant", "Auto", "Banane", "Schokolade", "Erdbeere",
-    "Tomate", "Fernseher", "Krokodil", "Lokomotive"
-  ];
-
-  const capitalizationSentences = [
-    "ich gehe morgen zur schule.",
-    "am montag haben wir sport.",
-    "wir essen heute pizza.",
-    "gestern war ich bei oma.",
-    "heute ist ein schöner tag."
-  ];
-
-  const articleWords = [
-    "Baum", "Lampe", "Auto", "Maus", "Fenster",
-    "Stuhl", "Kaffee", "Himmel", "Brot"
-  ];
-
-  const autoQuestions = [
-    "Setze das Komma: Als ich nach Hause kam ___ fing es an zu regnen.",
-    "Wie lautet der Artikel? ___ Baum (der/die/das)",
-    "Wie lautet der Plural von 'Haus'?",
-    "Schreibe richtig: 'am montag ging ich zur schule'",
-    "Was ist ein Synonym für 'reden'?",
-    "Welche Zeitform ist: 'Ich ging.'?",
-    "Setze das passende Wort ein: 'Ich freue mich ___ dich.'",
-    "Finde den Fehler: 'dass Auto ist rot'",
-    "Welches Wort passt? 'Der Hund ___ laut.'",
-    "Was ist das Gegenteil von 'kalt'?"
-  ];
-
-  // =========================================
-  //              SPIEL-STATUS
-  // =========================================
   let questions = [];
   let gameStarted = false;
   let gameOver = false;
-  let currentQuestionIndex = 0;
+  let current = 0;
 
-  let ballPosition = 0;
-  const maxBallPosition = 4;
   let redScore = 0;
   let blueScore = 0;
   let blueTeamName = "";
   let redTeamName = "";
-  $: blueTeamLabel = blueTeamName.trim() || "Team Blau";
-  $: redTeamLabel = redTeamName.trim() || "Team Rot";
+  $: blueTeamLabel = blueTeamName.trim() || "Équipe bleue";
+  $: redTeamLabel = redTeamName.trim() || "Équipe rouge";
+  let ballPosition = 0;
+  const maxBallPosition = 4;
 
-  // TIMER
-  let showTimer = false;
-  let timer = 10;
-  let timerInterval;
+  const wrongLabel = "Faux";
+  const skipLabel = "Passer";
+  const endLabel = "Terminer la partie";
+  const goalMessages = {
+    red: "⚽️ But pour l'équipe rouge !",
+    blue: "⚽️ But pour l'équipe bleue !"
+  };
 
-  // POPUP
-  let popupMessage = "";
   let showPopup = false;
-  let popupTimeout;
+  let popupMessage = "";
+  let goalResetTimeout;
 
-  function showMessage(msg) {
-    popupMessage = msg;
+  function handleGoal(team) {
+    popupMessage = goalMessages[team];
     showPopup = true;
-    clearTimeout(popupTimeout);
-    popupTimeout = setTimeout(() => (showPopup = false), 2200);
+
+    if (team === "red") {
+      redScore += 1;
+    } else {
+      blueScore += 1;
+    }
+
+    resetBall();
+    clearTimeout(goalResetTimeout);
+    goalResetTimeout = setTimeout(() => {
+      showPopup = false;
+    }, 1500);
   }
 
-  // =========================================
-  //              DATEI-UPLOAD
-  // =========================================
+  function goBack() {
+    goto("/start");
+  }
+
   function handleFileUpload(event) {
     file = event.target.files[0];
-    if (!file) return;
+
+    if (!file) {
+      sourceLines = [];
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
-      customTasks = reader.result
+      sourceLines = reader.result
         .split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 2);
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
     };
     reader.readAsText(file);
   }
 
-  // =========================================
-  //           MANUELLE AUFGABEN
-  // =========================================
   function processManualInput() {
-    customTasks = manualInput
+    sourceLines = manualInput
       .split("\n")
-      .map(l => l.trim())
-      .filter(l => l.length > 2);
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
   }
 
-  // =========================================
-  //          AUFGABEN GENERIEREN
-  // =========================================
+  function buildQuestionFromLine(line) {
+    // Format z.B.: Hund;chien → wir fragen auf Französisch
+    if (line.includes(";")) {
+      const [de, fr] = line.split(";").map((s) => s.trim());
+      if (de && fr) {
+        return `Traduisez en français : ${de}`;
+      }
+    }
+    return line;
+  }
+
+  const fallbackQuestions = [
+    "Traduisez en français : Haus",
+    "Traduisez en français : Schule",
+    "Traduisez en français : Auto",
+    "Traduisez en français : Katze",
+    "Traduisez en français : Hund",
+    "Traduisez en français : essen",
+    "Traduisez en français : spielen",
+    "Traduisez en français : schnell",
+    "Traduisez en français : groß",
+    "Traduisez en français : glücklich"
+  ];
+
   function generateQuestions() {
     questions = [];
+    const hasCustom = sourceLines.length > 0;
 
-    // Priorität 1: Datei oder manuelle Eingabe
-    if ((file || useManualInput) && customTasks.length > 0) {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(customTasks[Math.floor(Math.random() * customTasks.length)]);
-      }
-    }
-
-    // Silben bestimmen
-    else if (taskTypes.syllables) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = syllableWords[Math.floor(Math.random() * syllableWords.length)];
-        questions.push(`Bestimme die Silben: ${w}`);
-      }
-    }
-
-    // Groß-Klein-Schreibung
-    else if (taskTypes.capitalization) {
-      for (let i = 0; i < numQuestions; i++) {
-        const s = capitalizationSentences[Math.floor(Math.random() * capitalizationSentences.length)];
-        questions.push(`Schreibe richtig: "${s}"`);
-      }
-    }
-
-    // Artikel bestimmen
-    else if (taskTypes.articles) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = articleWords[Math.floor(Math.random() * articleWords.length)];
-        questions.push(`Welcher Artikel passt? (der/die/das) → ${w}`);
-      }
-    }
-
-    // Standardgenerator
-    else {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(autoQuestions[Math.floor(Math.random() * autoQuestions.length)]);
+    for (let i = 0; i < numQuestions; i++) {
+      if (hasCustom) {
+        const line =
+          sourceLines[Math.floor(Math.random() * sourceLines.length)];
+        questions.push(buildQuestionFromLine(line));
+      } else {
+        questions.push(
+          fallbackQuestions[
+            Math.floor(Math.random() * fallbackQuestions.length)
+          ]
+        );
       }
     }
 
     gameStarted = true;
     gameOver = false;
-    currentQuestionIndex = 0;
-    ballPosition = 0;
+    current = 0;
     redScore = 0;
     blueScore = 0;
+    resetBall();
     showPopup = false;
   }
 
-  // =========================================
-  //               SPIELLOGIK
-  // =========================================
   function moveBall(team) {
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
@@ -186,158 +149,109 @@
   }
 
   function wrongAnswer() {
-    showTimer = true;
-    timer = 10;
-
-    timerInterval = setInterval(() => {
-      timer--;
-      if (timer <= 0) stopTimer();
-    }, 1000);
+    nextQuestion();
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    showTimer = false;
-  }
+  function skipQuestion() {
+    questions.splice(current, 1);
 
-  function nextQuestion() {
-    stopTimer();
-    if (currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
-    } else {
-      endGame();
+    if (questions.length === 0) {
+      return endGame();
+    }
+
+    if (current >= questions.length) {
+      current = questions.length - 1;
     }
   }
 
-  function resetField() {
-    ballPosition = 0;
-    stopTimer();
+  function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+      endGame();
+    }
   }
 
   function endGame() {
     gameStarted = false;
     gameOver = true;
-    if (redScore > blueScore) showMessage("🏆 Team Rot gewinnt!");
-    else if (blueScore > redScore) showMessage("🏆 Team Blau gewinnt!");
-    else showMessage("🤝 Unentschieden!");
-    resetField();
+    clearTimeout(goalResetTimeout);
+    showPopup = false;
+    resetBall();
   }
 
-  function forceEndGame() {
-    gameStarted = false;
-    gameOver = true;
-    showMessage("🛑 Spiel wurde manuell beendet!");
-    resetField();
-  }
-
-  function goBack() {
-    goto("/start");
-  }
-
-  function handleGoal(team) {
-    if (team === "red") {
-      redScore += 1;
-      showMessage("⚽️ TOR für Team Rot!");
-    } else {
-      blueScore += 1;
-      showMessage("⚽️ TOR für Team Blau!");
-    }
-    resetField();
+  function resetBall() {
+    ballPosition = 0;
   }
 
   onDestroy(() => {
-    clearTimeout(popupTimeout);
+    clearTimeout(goalResetTimeout);
   });
 </script>
 
 {#if !gameStarted && !gameOver}
   <main class="config">
-    <h1>Deutsch – Wandtafelspiel</h1>
+    <h1>Paramètres des équipes et du jeu</h1>
 
     <div class="team-card-grid">
       <div class="team-card blue">
         <div class="team-card-header">
           <span class="team-icon">👕</span>
           <div>
-            <p class="team-title">Team Blau</p>
-            <p class="team-desc">Standardname, falls leer</p>
+            <p class="team-title">Équipe bleue</p>
+            <p class="team-desc">Nom par défaut si vide</p>
           </div>
         </div>
-        <input type="text" placeholder="Team Blau" bind:value={blueTeamName} />
+        <input type="text" placeholder="Équipe bleue" bind:value={blueTeamName} />
       </div>
       <div class="team-card red">
         <div class="team-card-header">
           <span class="team-icon">👕</span>
           <div>
-            <p class="team-title">Team Rot</p>
-            <p class="team-desc">Standardname, falls leer</p>
+            <p class="team-title">Équipe rouge</p>
+            <p class="team-desc">Nom par défaut si vide</p>
           </div>
         </div>
-        <input type="text" placeholder="Team Rot" bind:value={redTeamName} />
+        <input type="text" placeholder="Équipe rouge" bind:value={redTeamName} />
       </div>
     </div>
 
-    <p class="info-text">
-      Wenn kein Name eingegeben wird, heißen die Teams automatisch „Team Blau“ und „Team Rot“.
-    </p>
-
     <div class="settings-card">
-      <h2>Aufgaben & Einstellungen</h2>
+      <h2>Réglages du jeu</h2>
 
       <div class="input-row">
         <label>
-          Anzahl der Fragen
+          Nombre de questions
           <input type="number" min="1" max="50" bind:value={numQuestions} />
         </label>
       </div>
 
-      <div class="ops">
-        <p class="group-label">Aufgabentyp</p>
+      <div class="file-row">
         <label>
-          <input type="checkbox" bind:checked={taskTypes.syllables} />
-          Silben bestimmen
+          Contenu du cours (optionnel)
+          <input type="file" accept=".txt" on:change={handleFileUpload} />
         </label>
-        <label>
-          <input type="checkbox" bind:checked={taskTypes.capitalization} />
-          Groß- und Kleinschreibung
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={taskTypes.articles} />
-          Artikel bestimmen
-        </label>
+        {#if file}
+          <p class="fileInfo">📄 Fichier chargé : {file.name}</p>
+        {/if}
       </div>
-
-      <label class="file-label">
-        Unterrichtsstoff (optional, jede Aufgabe in eigene Zeile)
-        <input type="file" accept=".txt" on:change={handleFileUpload} />
-      </label>
-
-      {#if file}
-        <p class="fileInfo">📄 Datei geladen: {file.name}</p>
-      {/if}
 
       <label class="toggle">
         <input type="checkbox" bind:checked={useManualInput} />
-        Eigene Aufgaben manuell eingeben
+        <span>Saisir des consignes manuellement</span>
       </label>
 
       {#if useManualInput}
         <textarea
           rows="6"
-          placeholder="Beispiele:
-Artikel einsetzen
-Plural bilden
-Sätze korrigieren…"
+          placeholder={"Exemples :\nHund;chien\nHaus;maison\nou vos propres questions"}
           bind:value={manualInput}
           on:input={processManualInput}
         ></textarea>
       {/if}
 
       <div class="action-buttons">
-        <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
-        <button class="btn-primary" on:click={generateQuestions}>
-          Spiel starten
-        </button>
+        <button class="btn-secondary" on:click={goBack}>Retour</button>
+        <button class="btn-primary" on:click={generateQuestions}>Démarrer la partie</button>
       </div>
     </div>
   </main>
@@ -347,8 +261,8 @@ Sätze korrigieren…"
       <button
         type="button"
         class="score-card blue-card"
-        on:click={() => moveBall('blue')}
-        aria-label={`Punkt für ${blueTeamLabel}`}
+        on:click={() => moveBall("blue")}
+        aria-label={`Point pour ${blueTeamLabel}`}
       >
         <span class="score-team">{blueTeamLabel}</span>
         <span class="score-value">{blueScore}</span>
@@ -356,16 +270,16 @@ Sätze korrigieren…"
       <button
         type="button"
         class="score-card red-card"
-        on:click={() => moveBall('red')}
-        aria-label={`Punkt für ${redTeamLabel}`}
+        on:click={() => moveBall("red")}
+        aria-label={`Point pour ${redTeamLabel}`}
       >
         <span class="score-team">{redTeamLabel}</span>
         <span class="score-value">{redScore}</span>
       </button>
     </div>
 
-    <h2>Frage {currentQuestionIndex + 1} von {questions.length}</h2>
-    <div class="question">{questions[currentQuestionIndex]}</div>
+    <h2>Question {current + 1} sur {questions.length}</h2>
+    <div class="question">{questions[current]}</div>
 
     <div class="field-wrapper">
       <SoccerField
@@ -374,26 +288,28 @@ Sätze korrigieren…"
       />
     </div>
 
-    {#if showTimer}
-      <div class="timer">⏱ {timer}s</div>
-    {/if}
-
     <div class="buttons">
-      <button class="btn-neutral" on:click={wrongAnswer}>Falsch</button>
-      <button class="btn-neutral" on:click={nextQuestion}>Überspringen</button>
-      <button class="btn-neutral" on:click={forceEndGame}>Spiel beenden</button>
+      <button class="btn-neutral" on:click={wrongAnswer}>
+        {wrongLabel}
+      </button>
+      <button class="btn-neutral" on:click={skipQuestion}>
+        {skipLabel}
+      </button>
+      <button class="btn-neutral" on:click={endGame}>
+        {endLabel}
+      </button>
     </div>
   </main>
 {:else}
   <main class="end">
-    <h1>Spiel beendet</h1>
+    <h1>Partie terminée</h1>
 
     {#if redScore > blueScore}
-      <h2>{redTeamLabel} gewinnt!</h2>
+      <h2>{redTeamLabel} gagne !</h2>
     {:else if blueScore > redScore}
-      <h2>{blueTeamLabel} gewinnt!</h2>
+      <h2>{blueTeamLabel} gagne !</h2>
     {:else}
-      <h2>Unentschieden!</h2>
+      <h2>Égalité !</h2>
     {/if}
 
     <div class="scores">
@@ -407,8 +323,10 @@ Sätze korrigieren…"
       </div>
     </div>
 
-    <button class="btn-primary" on:click={generateQuestions}>Neues Spiel starten</button>
-    <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
+    <button class="btn-primary" on:click={generateQuestions}>
+      Nouvelle partie
+    </button>
+    <button class="btn-secondary" on:click={goBack}>Retour</button>
   </main>
 {/if}
 
@@ -422,7 +340,7 @@ Sätze korrigieren…"
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
-      'Segoe UI',
+      "Segoe UI",
       sans-serif;
   }
 
@@ -479,13 +397,13 @@ Sätze korrigieren…"
   }
 
   .team-icon {
+    font-size: 2rem;
     width: 56px;
     height: 56px;
     border-radius: 999px;
     display: grid;
     place-items: center;
     color: white;
-    font-size: 1.8rem;
   }
 
   .team-card.blue .team-icon {
@@ -496,21 +414,27 @@ Sätze korrigieren…"
     background: linear-gradient(135deg, #f87171, #dc2626);
   }
 
+  .team-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .team-desc {
+    margin: 2px 0 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
   .team-card input {
     width: 100%;
     padding: 14px 18px;
     border-radius: 16px;
     border: 2px solid #e2e8f0;
+    font-size: 1rem;
     background: white;
-    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.05);
     box-sizing: border-box;
-  }
-
-  .info-text {
-    margin: 16px 0 28px;
-    text-align: center;
-    color: #475569;
-    font-size: 0.95rem;
+    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.05);
   }
 
   .settings-card {
@@ -519,51 +443,59 @@ Sätze korrigieren…"
     border-radius: 32px;
     padding: 32px;
     box-shadow: 0 25px 50px rgba(15, 23, 42, 0.1);
-    text-align: left;
+    margin-top: 30px;
   }
 
-  .input-row {
-    margin-bottom: 20px;
+  .settings-card h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 1.6rem;
   }
 
-  .ops {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 16px 0;
-  }
-
-  .group-label {
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    color: #0f172a;
-  }
-
-  .file-label {
+  .input-row label {
     display: flex;
     flex-direction: column;
     font-weight: 600;
     color: #0f172a;
-    margin-bottom: 12px;
   }
 
-  .file-label input {
+  .input-row input {
+    margin-top: 8px;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: #f8fafc;
+  }
+
+  .file-row {
+    margin: 20px 0;
+  }
+
+  .file-row label {
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    color: #0f172a;
+  }
+
+  .file-row input {
     margin-top: 6px;
   }
 
   textarea {
     width: 100%;
-    padding: 1rem;
     border-radius: 16px;
-    border: 2px solid #cbd5e1;
-    resize: vertical;
+    border: 2px solid #e2e8f0;
+    padding: 0.75rem;
     font-size: 1rem;
+    resize: vertical;
     background: #f8fafc;
   }
 
   .fileInfo {
     font-size: 0.9rem;
-    color: #555;
+    color: #475569;
   }
 
   .toggle {
@@ -572,14 +504,13 @@ Sätze korrigieren…"
     gap: 10px;
     font-weight: 500;
     color: #0f172a;
-    margin: 12px 0;
   }
 
   .action-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 16px;
     margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
   }
 
   .game,
@@ -594,11 +525,6 @@ Sätze korrigieren…"
     flex-direction: column;
     gap: 16px;
     align-items: stretch;
-  }
-
-  .game h2,
-  .end h1 {
-    margin-bottom: 20px;
   }
 
   .question {
@@ -737,7 +663,6 @@ Sätze korrigieren…"
     border: none;
     cursor: pointer;
     font-weight: 600;
-    margin-top: 1rem;
   }
 
   .btn-primary {
@@ -751,34 +676,30 @@ Sätze korrigieren…"
     border: 2px solid #2563eb;
   }
 
-  .timer {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #f59e0b;
-    margin: 16px 0;
-  }
-
-  .goal-popup {
+  .popup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 1.2rem 2rem;
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-size: 1.8rem;
+    font-weight: bold;
     background: white;
     border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    animation: popupFade 1.5s ease forwards;
-    z-index: 1000;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    animation: fadeInOut 1.8s;
+    z-index: 999;
   }
 
-  @keyframes popupFade {
+  @keyframes fadeInOut {
     0% {
       opacity: 0;
       transform: translate(-50%, -60%);
     }
-    15%,
+    15% {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
     85% {
       opacity: 1;
       transform: translate(-50%, -50%);

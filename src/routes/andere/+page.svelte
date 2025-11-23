@@ -1,175 +1,170 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto } from "$app/navigation";
   import SoccerField from "$lib/components/game/SoccerField.svelte";
   import { onDestroy } from "svelte";
 
-  // =========================================
-  //              KONFIGURATION
-  // =========================================
   let numQuestions = 10;
-  let file = null;
-
-  // Manuelle Aufgaben
-  let manualInput = "";
-  let useManualInput = false;
-  let customTasks = [];
-
-  // Aufgabentypen wie gewünscht
-  let taskTypes = {
-    syllables: false,
-    capitalization: false,
-    articles: false
-  };
-
-  // Listen für automatische Aufgaben
-  const syllableWords = [
-    "Elefant", "Auto", "Banane", "Schokolade", "Erdbeere",
-    "Tomate", "Fernseher", "Krokodil", "Lokomotive"
-  ];
-
-  const capitalizationSentences = [
-    "ich gehe morgen zur schule.",
-    "am montag haben wir sport.",
-    "wir essen heute pizza.",
-    "gestern war ich bei oma.",
-    "heute ist ein schöner tag."
-  ];
-
-  const articleWords = [
-    "Baum", "Lampe", "Auto", "Maus", "Fenster",
-    "Stuhl", "Kaffee", "Himmel", "Brot"
-  ];
-
-  const autoQuestions = [
-    "Setze das Komma: Als ich nach Hause kam ___ fing es an zu regnen.",
-    "Wie lautet der Artikel? ___ Baum (der/die/das)",
-    "Wie lautet der Plural von 'Haus'?",
-    "Schreibe richtig: 'am montag ging ich zur schule'",
-    "Was ist ein Synonym für 'reden'?",
-    "Welche Zeitform ist: 'Ich ging.'?",
-    "Setze das passende Wort ein: 'Ich freue mich ___ dich.'",
-    "Finde den Fehler: 'dass Auto ist rot'",
-    "Welches Wort passt? 'Der Hund ___ laut.'",
-    "Was ist das Gegenteil von 'kalt'?"
-  ];
-
-  // =========================================
-  //              SPIEL-STATUS
-  // =========================================
-  let questions = [];
-  let gameStarted = false;
-  let gameOver = false;
-  let currentQuestionIndex = 0;
-
-  let ballPosition = 0;
-  const maxBallPosition = 4;
-  let redScore = 0;
-  let blueScore = 0;
+  let topic = "";
   let blueTeamName = "";
   let redTeamName = "";
   $: blueTeamLabel = blueTeamName.trim() || "Team Blau";
   $: redTeamLabel = redTeamName.trim() || "Team Rot";
+  let file = null;
 
-  // TIMER
-  let showTimer = false;
-  let timer = 10;
-  let timerInterval;
+  let useManualInput = false;
+  let manualInput = "";
+  let sourceLines = [];
+  let aiLoading = false;
+  let aiError = "";
 
-  // POPUP
-  let popupMessage = "";
+  let questions = [];
+  let gameStarted = false;
+  let gameOver = false;
+  let current = 0;
+
+  let redScore = 0;
+  let blueScore = 0;
+  let ballPosition = 0;
+  const maxBallPosition = 4;
+
+  const wrongLabel = "Falsch";
+  const skipLabel = "Überspringen";
+  const endLabel = "Spiel beenden";
+  const goalMessages = {
+    red: "⚽️ Tor für Team Rot!",
+    blue: "⚽️ Tor für Team Blau!"
+  };
+
   let showPopup = false;
-  let popupTimeout;
+  let popupMessage = "";
+  let goalResetTimeout;
 
-  function showMessage(msg) {
-    popupMessage = msg;
+  function handleGoal(team) {
+    popupMessage = goalMessages[team];
     showPopup = true;
-    clearTimeout(popupTimeout);
-    popupTimeout = setTimeout(() => (showPopup = false), 2200);
+
+    if (team === "red") {
+      redScore += 1;
+    } else {
+      blueScore += 1;
+    }
+
+    resetBall();
+    clearTimeout(goalResetTimeout);
+    goalResetTimeout = setTimeout(() => {
+      showPopup = false;
+    }, 1500);
   }
 
-  // =========================================
-  //              DATEI-UPLOAD
-  // =========================================
+  function goBack() {
+    goto("/start");
+  }
+
   function handleFileUpload(event) {
     file = event.target.files[0];
-    if (!file) return;
+
+    if (!file) {
+      sourceLines = [];
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
-      customTasks = reader.result
+      sourceLines = reader.result
         .split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 2);
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
     };
     reader.readAsText(file);
   }
 
-  // =========================================
-  //           MANUELLE AUFGABEN
-  // =========================================
   function processManualInput() {
-    customTasks = manualInput
+    sourceLines = manualInput
       .split("\n")
-      .map(l => l.trim())
-      .filter(l => l.length > 2);
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
   }
 
-  // =========================================
-  //          AUFGABEN GENERIEREN
-  // =========================================
-  function generateQuestions() {
-    questions = [];
+  const genericTemplates = [
+    (t, i) => `Frage ${i + 1} zum Thema ${t}: Erkläre den wichtigsten Begriff.`,
+    (t, i) =>
+      `Frage ${i + 1} zum Thema ${t}: Nenne ein Beispiel aus dem Alltag.`,
+    (t, i) => `Frage ${i + 1} zum Thema ${t}: Stelle eine eigene Frage dazu.`,
+    (t, i) =>
+      `Frage ${i + 1} zum Thema ${t}: Warum ist dieses Thema wichtig?`
+  ];
 
-    // Priorität 1: Datei oder manuelle Eingabe
-    if ((file || useManualInput) && customTasks.length > 0) {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(customTasks[Math.floor(Math.random() * customTasks.length)]);
-      }
-    }
-
-    // Silben bestimmen
-    else if (taskTypes.syllables) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = syllableWords[Math.floor(Math.random() * syllableWords.length)];
-        questions.push(`Bestimme die Silben: ${w}`);
-      }
-    }
-
-    // Groß-Klein-Schreibung
-    else if (taskTypes.capitalization) {
-      for (let i = 0; i < numQuestions; i++) {
-        const s = capitalizationSentences[Math.floor(Math.random() * capitalizationSentences.length)];
-        questions.push(`Schreibe richtig: "${s}"`);
-      }
-    }
-
-    // Artikel bestimmen
-    else if (taskTypes.articles) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = articleWords[Math.floor(Math.random() * articleWords.length)];
-        questions.push(`Welcher Artikel passt? (der/die/das) → ${w}`);
-      }
-    }
-
-    // Standardgenerator
-    else {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(autoQuestions[Math.floor(Math.random() * autoQuestions.length)]);
-      }
-    }
-
+  function startGameWith(list) {
+    questions = list;
     gameStarted = true;
     gameOver = false;
-    currentQuestionIndex = 0;
-    ballPosition = 0;
+    current = 0;
     redScore = 0;
     blueScore = 0;
+    resetBall();
     showPopup = false;
   }
 
-  // =========================================
-  //               SPIELLOGIK
-  // =========================================
+  function generateQuestions() {
+    const hasCustom = sourceLines.length > 0;
+    const hasTopic = topic.trim().length > 0;
+    const created = [];
+
+    for (let i = 0; i < numQuestions; i++) {
+      if (hasCustom) {
+        const line =
+          sourceLines[Math.floor(Math.random() * sourceLines.length)];
+        created.push(line);
+      } else if (hasTopic) {
+        const tmpl =
+          genericTemplates[Math.floor(Math.random() * genericTemplates.length)];
+        created.push(tmpl(topic.trim(), i));
+      } else {
+        created.push(`Allgemeine Frage ${i + 1}: Erkläre einen Fachbegriff.`);
+      }
+    }
+
+    startGameWith(created);
+  }
+
+  async function generateQuestionsWithAI() {
+    if (!topic.trim()) {
+      aiError = "Bitte gib zuerst ein Thema ein.";
+      return;
+    }
+
+    aiLoading = true;
+    aiError = "";
+
+    try {
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: "other",
+          topic: topic.trim(),
+          numQuestions
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        throw new Error(json.error || "Unbekannter Fehler");
+      }
+
+      const list = (json.questions || []).map((entry, index) => entry.question || `Frage ${index + 1}`);
+      if (!list.length) {
+        throw new Error("Die KI hat keine Fragen geliefert.");
+      }
+
+      startGameWith(list);
+    } catch (error) {
+      aiError = error.message;
+    } finally {
+      aiLoading = false;
+    }
+  }
+
   function moveBall(team) {
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
@@ -186,73 +181,48 @@
   }
 
   function wrongAnswer() {
-    showTimer = true;
-    timer = 10;
-
-    timerInterval = setInterval(() => {
-      timer--;
-      if (timer <= 0) stopTimer();
-    }, 1000);
+    nextQuestion();
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    showTimer = false;
-  }
+  function skipQuestion() {
+    questions.splice(current, 1);
 
-  function nextQuestion() {
-    stopTimer();
-    if (currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
-    } else {
-      endGame();
+    if (questions.length === 0) {
+      return endGame();
+    }
+
+    if (current >= questions.length) {
+      current = questions.length - 1;
     }
   }
 
-  function resetField() {
-    ballPosition = 0;
-    stopTimer();
+  function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+      endGame();
+    }
   }
 
   function endGame() {
     gameStarted = false;
     gameOver = true;
-    if (redScore > blueScore) showMessage("🏆 Team Rot gewinnt!");
-    else if (blueScore > redScore) showMessage("🏆 Team Blau gewinnt!");
-    else showMessage("🤝 Unentschieden!");
-    resetField();
+    clearTimeout(goalResetTimeout);
+    showPopup = false;
+    resetBall();
   }
 
-  function forceEndGame() {
-    gameStarted = false;
-    gameOver = true;
-    showMessage("🛑 Spiel wurde manuell beendet!");
-    resetField();
-  }
-
-  function goBack() {
-    goto("/start");
-  }
-
-  function handleGoal(team) {
-    if (team === "red") {
-      redScore += 1;
-      showMessage("⚽️ TOR für Team Rot!");
-    } else {
-      blueScore += 1;
-      showMessage("⚽️ TOR für Team Blau!");
-    }
-    resetField();
+  function resetBall() {
+    ballPosition = 0;
   }
 
   onDestroy(() => {
-    clearTimeout(popupTimeout);
+    clearTimeout(goalResetTimeout);
   });
 </script>
 
 {#if !gameStarted && !gameOver}
   <main class="config">
-    <h1>Deutsch – Wandtafelspiel</h1>
+    <h1>Andere Fächer – Wandtafelspiel</h1>
 
     <div class="team-card-grid">
       <div class="team-card blue">
@@ -282,33 +252,21 @@
     </p>
 
     <div class="settings-card">
-      <h2>Aufgaben & Einstellungen</h2>
+      <h2>Spiel-Einstellungen</h2>
 
       <div class="input-row">
+        <label>
+          Thema (optional)
+          <input type="text" bind:value={topic} placeholder="z.B. Geschichte, Musik…" />
+        </label>
         <label>
           Anzahl der Fragen
           <input type="number" min="1" max="50" bind:value={numQuestions} />
         </label>
       </div>
 
-      <div class="ops">
-        <p class="group-label">Aufgabentyp</p>
-        <label>
-          <input type="checkbox" bind:checked={taskTypes.syllables} />
-          Silben bestimmen
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={taskTypes.capitalization} />
-          Groß- und Kleinschreibung
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={taskTypes.articles} />
-          Artikel bestimmen
-        </label>
-      </div>
-
       <label class="file-label">
-        Unterrichtsstoff (optional, jede Aufgabe in eigene Zeile)
+        Unterrichtsstoff (optional)
         <input type="file" accept=".txt" on:change={handleFileUpload} />
       </label>
 
@@ -318,23 +276,27 @@
 
       <label class="toggle">
         <input type="checkbox" bind:checked={useManualInput} />
-        Eigene Aufgaben manuell eingeben
+        Aufgaben manuell eingeben
       </label>
 
       {#if useManualInput}
         <textarea
           rows="6"
-          placeholder="Beispiele:
-Artikel einsetzen
-Plural bilden
-Sätze korrigieren…"
+          placeholder={"Beispiele:\\nBeschreibe ein Experiment…\\nErkläre den Begriff…"}
           bind:value={manualInput}
           on:input={processManualInput}
         ></textarea>
       {/if}
 
+      {#if aiError}
+        <p class="ai-error">{aiError}</p>
+      {/if}
+
       <div class="action-buttons">
-        <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
+        <button class="btn-secondary" on:click={goBack}>Zurück</button>
+        <button class="btn-outline" on:click={generateQuestionsWithAI} disabled={aiLoading}>
+          {aiLoading ? "KI generiert…" : "KI-Fragen erstellen"}
+        </button>
         <button class="btn-primary" on:click={generateQuestions}>
           Spiel starten
         </button>
@@ -364,8 +326,8 @@ Sätze korrigieren…"
       </button>
     </div>
 
-    <h2>Frage {currentQuestionIndex + 1} von {questions.length}</h2>
-    <div class="question">{questions[currentQuestionIndex]}</div>
+    <h2>Frage {current + 1} von {questions.length}</h2>
+    <div class="question">{questions[current]}</div>
 
     <div class="field-wrapper">
       <SoccerField
@@ -374,14 +336,10 @@ Sätze korrigieren…"
       />
     </div>
 
-    {#if showTimer}
-      <div class="timer">⏱ {timer}s</div>
-    {/if}
-
     <div class="buttons">
-      <button class="btn-neutral" on:click={wrongAnswer}>Falsch</button>
-      <button class="btn-neutral" on:click={nextQuestion}>Überspringen</button>
-      <button class="btn-neutral" on:click={forceEndGame}>Spiel beenden</button>
+      <button class="btn-neutral" on:click={wrongAnswer}>{wrongLabel}</button>
+      <button class="btn-neutral" on:click={skipQuestion}>{skipLabel}</button>
+      <button class="btn-neutral" on:click={endGame}>{endLabel}</button>
     </div>
   </main>
 {:else}
@@ -408,7 +366,7 @@ Sätze korrigieren…"
     </div>
 
     <button class="btn-primary" on:click={generateQuestions}>Neues Spiel starten</button>
-    <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
+    <button class="btn-secondary" on:click={goBack}>Zurück</button>
   </main>
 {/if}
 
@@ -496,6 +454,18 @@ Sätze korrigieren…"
     background: linear-gradient(135deg, #f87171, #dc2626);
   }
 
+  .team-title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .team-desc {
+    margin: 2px 0 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
   .team-card input {
     width: 100%;
     padding: 14px 18px;
@@ -508,9 +478,9 @@ Sätze korrigieren…"
 
   .info-text {
     margin: 16px 0 28px;
-    text-align: center;
     color: #475569;
     font-size: 0.95rem;
+    text-align: center;
   }
 
   .settings-card {
@@ -519,24 +489,30 @@ Sätze korrigieren…"
     border-radius: 32px;
     padding: 32px;
     box-shadow: 0 25px 50px rgba(15, 23, 42, 0.1);
-    text-align: left;
   }
 
   .input-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
   }
 
-  .ops {
+  .input-row label {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
-    margin: 16px 0;
+    font-weight: 600;
+    color: #0f172a;
   }
 
-  .group-label {
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    color: #0f172a;
+  .input-row input {
+    margin-top: 8px;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: #f8fafc;
   }
 
   .file-label {
@@ -551,19 +527,19 @@ Sätze korrigieren…"
     margin-top: 6px;
   }
 
-  textarea {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 16px;
-    border: 2px solid #cbd5e1;
-    resize: vertical;
-    font-size: 1rem;
-    background: #f8fafc;
-  }
-
   .fileInfo {
     font-size: 0.9rem;
     color: #555;
+  }
+
+  textarea {
+    width: 100%;
+    border-radius: 16px;
+    border: 2px solid #cbd5e1;
+    padding: 0.75rem;
+    font-size: 1rem;
+    resize: vertical;
+    background: #f8fafc;
   }
 
   .toggle {
@@ -572,7 +548,7 @@ Sätze korrigieren…"
     gap: 10px;
     font-weight: 500;
     color: #0f172a;
-    margin: 12px 0;
+    margin-bottom: 18px;
   }
 
   .action-buttons {
@@ -580,6 +556,24 @@ Sätze korrigieren…"
     justify-content: flex-end;
     gap: 16px;
     margin-top: 24px;
+  }
+  .btn-outline {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 2px solid #0f172a;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-outline:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .ai-error {
+    margin-top: 12px;
+    color: #dc2626;
+    font-weight: 500;
   }
 
   .game,
@@ -749,13 +743,6 @@ Sätze korrigieren…"
     background: transparent;
     color: #2563eb;
     border: 2px solid #2563eb;
-  }
-
-  .timer {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #f59e0b;
-    margin: 16px 0;
   }
 
   .goal-popup {

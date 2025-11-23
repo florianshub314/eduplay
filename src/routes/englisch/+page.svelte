@@ -1,453 +1,764 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { goto } from "$app/navigation";
+  import SoccerField from "$lib/components/game/SoccerField.svelte";
+  import { onDestroy } from "svelte";
 
-  // =========================================
-  //              KONFIGURATION
-  // =========================================
+  // =========================
+  //    CONFIG
+  // =========================
   let numQuestions = 10;
   let file = null;
 
-  // Vokabel-Liste
-  let vocabList = [];
-  let manualVocabInput = "";
-  let useManualVocab = false;
+  let useManualInput = false;
+  let manualInput = "";
+  let sourceLines = [];
 
-  // =========================================
-  //              SPIEL-STATUS
-  // =========================================
+  // =========================
+  //   GAME STATE
+  // =========================
   let questions = [];
   let gameStarted = false;
   let gameOver = false;
-  let currentQuestionIndex = 0;
+  let current = 0;
 
-  let ballPosition = 0;
   let redScore = 0;
   let blueScore = 0;
+  let blueTeamName = "";
+  let redTeamName = "";
+  $: blueTeamLabel = blueTeamName.trim() || "Team Blue";
+  $: redTeamLabel = redTeamName.trim() || "Team Red";
+  let ballPosition = 0;
+  const maxBallPosition = 4;
 
-  // TIMER
-  let showTimer = false;
-  let timer = 10;
-  let timerInterval;
+  const wrongLabel = "Wrong";
+  const skipLabel = "Skip";
+  const endLabel = "End game";
+  const goalMessages = {
+    red: "⚽️ Goal for Team Red!",
+    blue: "⚽️ Goal for Team Blue!"
+  };
 
-  // POPUP
-  let popupMessage = "";
+  // =========================
+  //    POPUP (GOALS)
+  // =========================
   let showPopup = false;
+  let popupMessage = "";
+  let goalResetTimeout;
 
-  function showMessage(msg) {
-    popupMessage = msg;
+  function handleGoal(team) {
+    popupMessage = goalMessages[team];
     showPopup = true;
-    setTimeout(() => (showPopup = false), 2200);
+
+    if (team === "red") {
+      redScore += 1;
+    } else {
+      blueScore += 1;
+    }
+
+    resetBall();
+    clearTimeout(goalResetTimeout);
+    goalResetTimeout = setTimeout(() => {
+      showPopup = false;
+    }, 1500);
   }
 
-  // =========================================
-  //              DATEI-UPLOAD
-  // =========================================
+  // =========================
+  //    HELPERS
+  // =========================
+  function goBack() {
+    goto("/start");
+  }
+
   function handleFileUpload(event) {
     file = event.target.files[0];
 
-    if (!file) return;
+    if (!file) {
+      sourceLines = [];
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
-      const content = reader.result;
-      vocabList = content
+      sourceLines = reader.result
         .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.includes(";"))
-        .map(line => {
-          const [de, en] = line.split(";").map(s => s.trim());
-          return { de, en };
-        });
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
     };
     reader.readAsText(file);
   }
 
-  // =========================================
-  //           MANUELLE VOKABELN
-  // =========================================
   function processManualInput() {
-    vocabList = manualVocabInput
+    sourceLines = manualInput
       .split("\n")
-      .map(l => l.trim())
-      .filter(l => l.includes(";"))
-      .map(l => {
-        const [de, en] = l.split(";").map(x => x.trim());
-        return { de, en };
-      });
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
   }
 
-  // =========================================
-  //         AUFGABEN GENERIEREN
-  // =========================================
+  function buildQuestionFromLine(line) {
+    // Format z.B.: Haus;house  → wir fragen nach der englischen Übersetzung
+    if (line.includes(";")) {
+      const [de, en] = line.split(";").map((s) => s.trim());
+      if (de && en) {
+        return `Translate into English: ${de}`;
+      }
+    }
+    // Sonst benutzen wir die Zeile direkt als Frage
+    return line;
+  }
+
+  const fallbackQuestions = [
+    "Translate into English: Haus",
+    "Translate into English: Schule",
+    "Translate into English: Auto",
+    "Translate into English: Baum",
+    "Translate into English: Katze",
+    "Translate into English: Hund",
+    "Translate into English: rot",
+    "Translate into English: schnell",
+    "Translate into English: glücklich",
+    "Translate into English: spielen"
+  ];
+
   function generateQuestions() {
     questions = [];
+    const hasCustom = sourceLines.length > 0;
 
-    if (file && vocabList.length > 0) {
-      // Vokabeln aus Datei
-      for (let i = 0; i < numQuestions; i++) {
-        const entry = vocabList[Math.floor(Math.random() * vocabList.length)];
-        questions.push(`${entry.de} → ?`);
-      }
-    }
-
-    else if (useManualVocab && vocabList.length > 0) {
-      // Vokabeln aus Textfeld
-      for (let i = 0; i < numQuestions; i++) {
-        const entry = vocabList[Math.floor(Math.random() * vocabList.length)];
-        questions.push(`${entry.de} → ?`);
-      }
-    }
-
-    else {
-      // Fallback – einfache Englischfragen
-      const fallback = [
-        "house → ?",
-        "eat → ?",
-        "go → ?",
-        "car → ?",
-        "sun → ?",
-        "cat → ?",
-        "dog → ?",
-        "red → ?",
-        "apple → ?",
-        "school → ?"
-      ];
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(fallback[Math.floor(Math.random() * fallback.length)]);
+    for (let i = 0; i < numQuestions; i++) {
+      if (hasCustom) {
+        const line =
+          sourceLines[Math.floor(Math.random() * sourceLines.length)];
+        questions.push(buildQuestionFromLine(line));
+      } else {
+        questions.push(
+          fallbackQuestions[
+            Math.floor(Math.random() * fallbackQuestions.length)
+          ]
+        );
       }
     }
 
     gameStarted = true;
     gameOver = false;
-    currentQuestionIndex = 0;
+    current = 0;
+    redScore = 0;
+    blueScore = 0;
+    resetBall();
+    showPopup = false;
   }
 
-  // =========================================
-  //               SPIELLOGIK
-  // =========================================
+  // =========================
+  //       GAME LOGIC
+  // =========================
   function moveBall(team) {
     if (team === "red") {
-      ballPosition--;
-      if (ballPosition <= -4) {
-        redScore++;
-        showMessage("⚽️ TOR für Team Rot!");
-        resetField();
+      ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
+      if (ballPosition === -maxBallPosition) {
+        handleGoal("red");
       }
     } else {
-      ballPosition++;
-      if (ballPosition >= 4) {
-        blueScore++;
-        showMessage("⚽️ TOR für Team Blau!");
-        resetField();
+      ballPosition = Math.min(ballPosition + 1, maxBallPosition);
+      if (ballPosition === maxBallPosition) {
+        handleGoal("blue");
       }
     }
     nextQuestion();
   }
 
   function wrongAnswer() {
-    showTimer = true;
-    timer = 10;
-
-    timerInterval = setInterval(() => {
-      timer--;
-      if (timer <= 0) stopTimer();
-    }, 1000);
+    // nur zur nächsten Frage weiter
+    nextQuestion();
   }
 
-  function stopTimer() {
-    clearInterval(timerInterval);
-    showTimer = false;
-  }
+  function skipQuestion() {
+    // Frage wird entfernt, Zähler bleibt – so verteilst du immer alle Punkte
+    questions.splice(current, 1);
 
-  function nextQuestion() {
-    stopTimer();
-    if (currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
-    } else {
-      endGame();
+    if (questions.length === 0) {
+      return endGame();
+    }
+
+    if (current >= questions.length) {
+      current = questions.length - 1;
     }
   }
 
-  function resetField() {
-    ballPosition = 0;
-    stopTimer();
+  function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+      endGame();
+    }
   }
 
   function endGame() {
     gameStarted = false;
     gameOver = true;
-
-    if (redScore > blueScore) showMessage("🏆 Team Rot gewinnt!");
-    else if (blueScore > redScore) showMessage("🏆 Team Blau gewinnt!");
-    else showMessage("🤝 Unentschieden!");
+    clearTimeout(goalResetTimeout);
+    showPopup = false;
+    resetBall();
   }
 
-  function forceEndGame() {
-    gameStarted = false;
-    gameOver = true;
-    showMessage("🛑 Spiel wurde manuell beendet!");
+  function resetBall() {
+    ballPosition = 0;
   }
 
-  function goBack() {
-    goto('/');
-  }
+  onDestroy(() => {
+    clearTimeout(goalResetTimeout);
+  });
 </script>
 
-<!-- ========================================= -->
-<!--               STARTANSICHT                -->
-<!-- ========================================= -->
+{#if !gameStarted && !gameOver}
+  <main class="config">
+    <h1>Teams & Game Settings</h1>
 
-<main>
-  {#if !gameStarted && !gameOver}
-    <h1>Englisch – Wandtafelspiel</h1>
+    <div class="team-card-grid">
+      <div class="team-card blue">
+        <div class="team-card-header">
+          <span class="team-icon">👕</span>
+          <div>
+            <p class="team-title">Team Blue</p>
+            <p class="team-desc">Default name if empty</p>
+          </div>
+        </div>
+        <input
+          type="text"
+          placeholder="Team Blue"
+          bind:value={blueTeamName}
+        />
+      </div>
+      <div class="team-card red">
+        <div class="team-card-header">
+          <span class="team-icon">👕</span>
+          <div>
+            <p class="team-title">Team Red</p>
+            <p class="team-desc">Default name if empty</p>
+          </div>
+        </div>
+        <input type="text" placeholder="Team Red" bind:value={redTeamName} />
+      </div>
+    </div>
 
-    <div class="form">
+    <div class="settings-card">
+      <h2>Game Settings</h2>
 
-      <label>Anzahl der Fragen:</label>
-      <input type="number" min="1" max="50" bind:value={numQuestions} />
+      <div class="input-row">
+        <label>
+          Number of questions
+          <input type="number" min="1" max="50" bind:value={numQuestions} />
+        </label>
+      </div>
 
-      <label>Unterrichtsstoff (optional, Format: Deutsch;Englisch pro Zeile):</label>
-      <input type="file" accept=".txt" on:change={handleFileUpload} />
+      <div class="file-row">
+        <label>
+          Lesson content (optional)
+          <input type="file" accept=".txt" on:change={handleFileUpload} />
+        </label>
+        {#if file}
+          <p class="fileInfo">📄 {file.name} loaded</p>
+        {/if}
+      </div>
 
-      {#if file}
-        <p class="fileInfo">📄 Datei geladen: {file.name}</p>
-      {/if}
-
-      <hr />
-
-      <label>
-        <input type="checkbox" bind:checked={useManualVocab} />
-        Vokabeln manuell eingeben
+      <label class="toggle">
+        <input type="checkbox" bind:checked={useManualInput} />
+        <span>Enter prompts manually</span>
       </label>
 
-      {#if useManualVocab}
+      {#if useManualInput}
         <textarea
           rows="6"
-          placeholder="Format:\nHaus;house\nAuto;car\nBaum;tree"
-          bind:value={manualVocabInput}
+          placeholder={"Examples:\nHaus;house\nSchule;school\nor your own prompts"}
+          bind:value={manualInput}
           on:input={processManualInput}
         ></textarea>
       {/if}
 
-      <button on:click={generateQuestions}>Spiel starten</button>
-    </div>
-
-    <button class="back" on:click={goBack}>⬅️ Zurück</button>
-
-  {:else if gameStarted}
-
-    <h2>Frage {currentQuestionIndex + 1} von {questions.length}</h2>
-    <h1>{questions[currentQuestionIndex]}</h1>
-
-    <div class="field">
-      <div class="goal blue">Tor Blau</div>
-      <div class="bar">
-        <div class="ball" style="left: calc(50% + {ballPosition * 60}px)"></div>
+      <div class="action-buttons">
+        <button class="btn-secondary" on:click={goBack}>Back</button>
+        <button class="btn-primary" on:click={generateQuestions}>
+          Start game
+        </button>
       </div>
-      <div class="goal red">Tor Rot</div>
+    </div>
+  </main>
+{:else if gameStarted}
+  <main class="game">
+    <div class="scoreboard">
+      <button
+        type="button"
+        class="score-card blue-card"
+        on:click={() => moveBall("blue")}
+        aria-label={`Point for ${blueTeamLabel}`}
+      >
+        <span class="score-team">{blueTeamLabel}</span>
+        <span class="score-value">{blueScore}</span>
+      </button>
+      <button
+        type="button"
+        class="score-card red-card"
+        on:click={() => moveBall("red")}
+        aria-label={`Point for ${redTeamLabel}`}
+      >
+        <span class="score-team">{redTeamLabel}</span>
+        <span class="score-value">{redScore}</span>
+      </button>
     </div>
 
-    <div class="scores">
-      <span class="blue">🔵 {blueScore}</span>
-      <span class="red">{redScore} 🔴</span>
-    </div>
+    <h2>Question {current + 1} of {questions.length}</h2>
+    <div class="question">{questions[current]}</div>
 
-    {#if showTimer}
-      <div class="timer">⏱ {timer}s</div>
-    {/if}
+    <div class="field-wrapper">
+      <SoccerField
+        position={ballPosition}
+        maxPosition={maxBallPosition}
+      />
+    </div>
 
     <div class="buttons">
-      <button class="redBtn" on:click={() => moveBall('red')}>🔴 Team Rot</button>
-      <button class="blueBtn" on:click={() => moveBall('blue')}>🔵 Team Blau</button>
-      <button class="wrongBtn" on:click={wrongAnswer}>❌ Falsch</button>
-      <button class="skipBtn" on:click={nextQuestion}>⏭ Skip</button>
-
-      <button class="endBtn" on:click={forceEndGame}>🛑 Spiel beenden</button>
+      <button class="btn-neutral" on:click={wrongAnswer}>
+        {wrongLabel}
+      </button>
+      <button class="btn-neutral" on:click={skipQuestion}>
+        {skipLabel}
+      </button>
+      <button class="btn-neutral" on:click={endGame}>
+        {endLabel}
+      </button>
     </div>
-
-  {:else}
-
-    <h1>Spiel beendet</h1>
+  </main>
+{:else}
+  <main class="end">
+    <h1>Game over</h1>
 
     {#if redScore > blueScore}
-      <h2>🏆 Team Rot gewinnt!</h2>
+      <h2>{redTeamLabel} wins!</h2>
     {:else if blueScore > redScore}
-      <h2>🏆 Team Blau gewinnt!</h2>
+      <h2>{blueTeamLabel} wins!</h2>
     {:else}
-      <h2>🤝 Unentschieden!</h2>
+      <h2>Draw!</h2>
     {/if}
 
     <div class="scores">
-      <span class="blue">🔵 {blueScore}</span>
-      <span class="red">{redScore} 🔴</span>
+      <div class="team team-blue">
+        <div class="label">{blueTeamLabel}</div>
+        <div class="value">{blueScore}</div>
+      </div>
+      <div class="team team-red">
+        <div class="label">{redTeamLabel}</div>
+        <div class="value">{redScore}</div>
+      </div>
     </div>
 
-    <button on:click={generateQuestions}>🔁 Neues Spiel starten</button>
-    <button class="back" on:click={goBack}>⬅️ Zurück</button>
+    <button class="btn-primary" on:click={generateQuestions}>
+      Start new game
+    </button>
+    <button class="btn-secondary" on:click={goBack}>Back</button>
+  </main>
+{/if}
 
-  {/if}
-
-  {#if showPopup}
-    <div class="popup">{popupMessage}</div>
-  {/if}
-</main>
-
-<!-- ========================================= -->
-<!--                  STYLES                   -->
-<!-- ========================================= -->
+{#if showPopup}
+  <div class="goal-popup">{popupMessage}</div>
+{/if}
 
 <style>
   main {
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  .config {
+    min-height: 100vh;
+    padding: 60px 24px 80px;
+    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: #f9fafb;
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    text-align: left;
   }
 
-  .form {
+  .config h1 {
+    font-size: 2.4rem;
+    margin-bottom: 32px;
+    text-align: center;
+    color: #0f172a;
+  }
+
+  .team-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 24px;
+    width: min(960px, 100%);
+    margin-bottom: 28px;
+  }
+
+  .team-card {
+    background: white;
+    border-radius: 28px;
+    padding: 32px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    min-height: 180px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    background: white;
-    padding: 2rem;
+    gap: 16px;
+  }
+
+  .team-card.blue {
+    border-color: #60a5fa;
+  }
+
+  .team-card.red {
+    border-color: #f87171;
+  }
+
+  .team-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .team-icon {
+    font-size: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: white;
+  }
+
+  .team-card.blue .team-icon {
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+  }
+
+  .team-card.red .team-icon {
+    background: linear-gradient(135deg, #f87171, #dc2626);
+  }
+
+  .team-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .team-desc {
+    margin: 2px 0 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .team-card input {
+    width: 100%;
+    padding: 14px 18px;
     border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    text-align: left;
-    width: 360px;
+    border: 2px solid #e2e8f0;
+    font-size: 1rem;
+    background: white;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.05);
+  }
+
+  .settings-card {
+    width: min(960px, 100%);
+    background: white;
+    border-radius: 32px;
+    padding: 32px;
+    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.1);
+    margin-top: 30px;
+  }
+
+  .settings-card h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-size: 1.6rem;
+  }
+
+  .input-row label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .input-row input {
+    margin-top: 8px;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 1rem;
+    background: #f8fafc;
+  }
+
+  .file-row {
+    margin: 20px 0;
+  }
+
+  .file-row label {
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    color: #0f172a;
+  }
+
+  .file-row input {
+    margin-top: 6px;
   }
 
   textarea {
     width: 100%;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    resize: vertical;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    padding: 0.75rem;
     font-size: 1rem;
+    resize: vertical;
+    background: #f8fafc;
   }
 
   .fileInfo {
     font-size: 0.9rem;
-    color: #555;
+    color: #475569;
   }
 
-  .range input {
-    width: 80px;
-  }
-
-  .field {
-    position: relative;
-    width: 480px;
-    height: 120px;
-    margin: 2rem 0;
+  .toggle {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 10px;
+    font-weight: 500;
+    color: #0f172a;
   }
 
-  .goal {
-    width: 80px;
+  .action-buttons {
+    margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+  }
+
+  .game,
+  .end {
+    max-width: 1100px;
+    margin: 40px auto;
     text-align: center;
-    font-weight: bold;
   }
 
-  .goal.red { color: #dc2626; }
-  .goal.blue { color: #2563eb; }
+  .game {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
 
-  .bar {
-    position: relative;
+  .game h2,
+  .end h1 {
+    margin-bottom: 20px;
+  }
+
+  .question {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+
+  .field-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 20px;
+  }
+
+  .scoreboard {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .score-card {
     flex: 1;
-    height: 8px;
-    background: #d1d5db;
-    border-radius: 4px;
+    border: none;
+    border-radius: 24px;
+    padding: 22px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    cursor: pointer;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
 
-  .ball {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, white 40%, black 42%);
-    border: 2px solid #222;
-    transition: left 0.3s ease-in-out;
+  .score-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.25);
+  }
+
+  .score-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+  }
+
+  .score-card:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.6);
+    outline-offset: 4px;
+  }
+
+  .score-card.blue-card {
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+  }
+
+  .score-card.red-card {
+    background: linear-gradient(135deg, #f87171, #dc2626);
+  }
+
+  .score-team {
+    font-size: 1.1rem;
+  }
+
+  .score-value {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
   }
 
   .scores {
     display: flex;
-    justify-content: space-between;
-    width: 300px;
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+    justify-content: center;
+    gap: 40px;
+    margin: 10px 0 20px;
   }
 
-  .red { color: #dc2626; }
-  .blue { color: #2563eb; }
+  .team .label {
+    font-size: 0.9rem;
+  }
+
+  .team .value {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .team-blue .value {
+    color: #2563eb;
+  }
+
+  .team-red .value {
+    color: #dc2626;
+  }
 
   .buttons {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
   }
 
-  .buttons button {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
+  .btn-red,
+  .btn-blue,
+  .btn-neutral {
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 2px solid #444;
     cursor: pointer;
+    font-weight: 500;
+    min-width: 140px;
+  }
+
+  .btn-red {
+    background: #dc2626;
+    color: white;
+    border-color: #b91c1c;
+  }
+
+  .btn-blue {
+    background: #2563eb;
+    color: white;
+    border-color: #1d4ed8;
+  }
+
+  .btn-neutral {
+    background: #e5e7eb;
+    color: #111827;
+    border-color: #6b7280;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    background: #2563eb;
     color: white;
   }
 
-  .redBtn { background: #dc2626; }
-  .blueBtn { background: #2563eb; }
-  .wrongBtn { background: #f59e0b; color: black; }
-  .skipBtn { background: #6b7280; }
-  .endBtn { background: #0f172a; }
-
-  .timer {
-    font-size: 1.5rem;
-    color: #f59e0b;
-    font-weight: bold;
-    margin-bottom: 1rem;
+  .btn-secondary {
+    background: transparent;
+    color: #2563eb;
+    border: 2px solid #2563eb;
   }
 
-  .back {
-    margin-top: 2rem;
-    background: #e5e7eb;
-    color: #111;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
+  .btn-red:hover {
+    background: #b91c1c;
   }
 
-  .popup {
+  .btn-blue:hover {
+    background: #1d4ed8;
+  }
+
+  .btn-neutral:hover {
+    background: #d1d5db;
+  }
+
+  .btn-primary:hover {
+    background: #1d4ed8;
+  }
+
+  .btn-secondary:hover {
+    background: #dbeafe;
+  }
+
+  .goal-popup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    padding: 1.2rem 2rem;
+    font-size: 1.6rem;
+    font-weight: 700;
     background: white;
-    color: #111;
-    font-size: 1.8rem;
-    font-weight: bold;
-    padding: 1rem 2rem;
     border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    animation: popupFade 1.5s ease forwards;
     z-index: 1000;
-    animation: fadein 0.3s, fadeout 0.5s 2s;
   }
 
-  @keyframes fadein {
-    from { opacity: 0; transform: translate(-50%, -60%); }
-    to { opacity: 1; transform: translate(-50%, -50%); }
+  @keyframes popupFade {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -60%);
+    }
+    15%,
+    85% {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -40%);
+    }
   }
 
-  @keyframes fadeout {
-    to { opacity: 0; transform: translate(-50%, -45%); }
+  @media (max-width: 720px) {
+    .scoreboard {
+      flex-direction: column;
+    }
   }
 </style>
