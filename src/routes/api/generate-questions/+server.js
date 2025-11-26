@@ -1,15 +1,65 @@
 import { json } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 
-const OPENAI_API_KEY = env.OPENAI_API_KEY;
+const OPENAI_API_KEY =
+  env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
 const DEFAULT_MODEL = "gpt-4o-mini";
 
-export async function POST({ request }) {
-  const { topic = "", numQuestions = 5 } = await request.json();
-  const trimmedTopic = topic.trim();
+function normalizeEntry(item, index) {
+  if (typeof item === "string") {
+    let text = item.trim();
 
-  if (!trimmedTopic) {
-    return json({ error: "Bitte gib zuerst ein Thema ein." }, { status: 400 });
+    if (text.startsWith("{") && text.endsWith("}")) {
+      try {
+        return normalizeEntry(JSON.parse(text), index);
+      } catch {
+        // ignore parse errors and handle as plain text
+      }
+    }
+
+    text = text.replace(/^["']?question["']?\s*[:=]\s*/i, "").trim();
+    text = text.replace(/^\d+[\.\)\-:]\s*/, "").trim();
+
+    return { question: text || `Frage ${index + 1}`, hint: null };
+  }
+
+  if (item && typeof item === "object") {
+    const base = normalizeEntry(item.question || item.prompt || "", index);
+    const hint =
+      typeof item.hint === "string" && item.hint.trim().length > 0
+        ? item.hint.trim()
+        : base.hint;
+
+    return {
+      question: base.question,
+      hint
+    };
+  }
+
+  return { question: `Frage ${index + 1}`, hint: null };
+}
+
+export async function POST({ request }) {
+  const {
+    topic = "",
+    material = "",
+    instructions = "",
+    fileName = "",
+    numQuestions = 5
+  } = await request.json();
+
+  const trimmedTopic = topic.trim();
+  const trimmedMaterial =
+    typeof material === "string" ? material.trim() : "";
+  const trimmedInstructions =
+    typeof instructions === "string" ? instructions.trim() : "";
+  const limitedMaterial = trimmedMaterial.slice(0, 6000);
+
+  if (!trimmedTopic && !limitedMaterial) {
+    return json(
+      { error: "Bitte gib ein Thema ein oder lade Unterrichtsmaterial hoch." },
+      { status: 400 }
+    );
   }
 
   if (!OPENAI_API_KEY) {
@@ -23,9 +73,26 @@ export async function POST({ request }) {
   }
 
   try {
-    const prompt = `Erstelle ${numQuestions} kurze Quizfragen zum Thema "${trimmedTopic}".
+    const contextParts = [];
+    if (trimmedTopic) {
+      contextParts.push(`Thema: "${trimmedTopic}".`);
+    }
+    if (limitedMaterial) {
+      contextParts.push(
+        `Unterrichtsmaterial${fileName ? ` (${fileName})` : ""}:\n${limitedMaterial}`
+      );
+    }
+    if (trimmedInstructions) {
+      contextParts.push(`Hinweise:\n${trimmedInstructions}`);
+    }
+
+    const prompt = `Erstelle ${numQuestions} kurze Quizfragen passend zu folgendem Kontext.
 Für jede Frage den folgenden JSON verwenden: {"question":"...", "hint":"optional kurzer Tipp"}.
-Es dürfen offene Fragen sein, keine Mehrfachauswahl. Antworten nicht mitsenden.`;
+Es dürfen offene Fragen sein, keine Mehrfachauswahl. Antworten nicht mitsenden.
+
+${contextParts.join("\n\n")}
+
+Halte dich eng an die Inhalte und Hinweise.`;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -76,11 +143,14 @@ Es dürfen offene Fragen sein, keine Mehrfachauswahl. Antworten nicht mitsenden.
         .map((question) => ({ question }));
     }
 
-    const questions = parsed.map((item, index) => ({
-      id: index + 1,
-      question: item.question || item.prompt || `Frage ${index + 1}`,
-      hint: item.hint || null
-    }));
+    const questions = parsed.map((item, index) => {
+      const normalized = normalizeEntry(item, index);
+      return {
+        id: index + 1,
+        question: normalized.question,
+        hint: normalized.hint
+      };
+    });
 
     return json({ questions });
   } catch (error) {

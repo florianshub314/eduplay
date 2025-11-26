@@ -1,30 +1,50 @@
 <script>
-  import { goto } from '$app/navigation';
-  import SoccerField from "$lib/components/game/SoccerField.svelte";
+  import { goto } from "$app/navigation";
   import { onDestroy } from "svelte";
+  import SetupScreen from "$lib/components/game/SetupScreen.svelte";
+  import ActiveGameScreen from "$lib/components/game/ActiveGameScreen.svelte";
+  import EndScreen from "$lib/components/game/EndScreen.svelte";
+  import GoalPopup from "$lib/components/game/GoalPopup.svelte";
+  import { readMaterialLines } from "$lib/utils/materialParser";
 
-  // =========================================
-  //              KONFIGURATION
-  // =========================================
   let numQuestions = 10;
   let file = null;
-
-  // Manuelle Aufgaben
-  let manualInput = "";
   let useManualInput = false;
+  let manualInput = "";
   let customTasks = [];
+  let fileError = "";
 
-  // Aufgabentypen wie gewünscht
-  let taskTypes = {
+  let questions = [];
+  let gameStarted = false;
+  let gameOver = false;
+  let currentQuestionIndex = 0;
+
+  let redScore = 0;
+  let blueScore = 0;
+  let ballPosition = 0;
+  const maxBallPosition = 4;
+
+  let blueTeamName = "";
+  let redTeamName = "";
+  $: blueTeamLabel = blueTeamName.trim() || "Team Blau";
+  $: redTeamLabel = redTeamName.trim() || "Team Rot";
+
+  const taskTypes = {
     syllables: false,
     capitalization: false,
     articles: false
   };
 
-  // Listen für automatische Aufgaben
   const syllableWords = [
-    "Elefant", "Auto", "Banane", "Schokolade", "Erdbeere",
-    "Tomate", "Fernseher", "Krokodil", "Lokomotive"
+    "Elefant",
+    "Auto",
+    "Banane",
+    "Schokolade",
+    "Erdbeere",
+    "Tomate",
+    "Fernseher",
+    "Krokodil",
+    "Lokomotive"
   ];
 
   const capitalizationSentences = [
@@ -36,8 +56,15 @@
   ];
 
   const articleWords = [
-    "Baum", "Lampe", "Auto", "Maus", "Fenster",
-    "Stuhl", "Kaffee", "Himmel", "Brot"
+    "Baum",
+    "Lampe",
+    "Auto",
+    "Maus",
+    "Fenster",
+    "Stuhl",
+    "Kaffee",
+    "Himmel",
+    "Brot"
   ];
 
   const autoQuestions = [
@@ -53,111 +80,100 @@
     "Was ist das Gegenteil von 'kalt'?"
   ];
 
-  // =========================================
-  //              SPIEL-STATUS
-  // =========================================
-  let questions = [];
-  let gameStarted = false;
-  let gameOver = false;
-  let currentQuestionIndex = 0;
-
-  let ballPosition = 0;
-  const maxBallPosition = 4;
-  let redScore = 0;
-  let blueScore = 0;
-  let blueTeamName = "";
-  let redTeamName = "";
-  $: blueTeamLabel = blueTeamName.trim() || "Team Blau";
-  $: redTeamLabel = redTeamName.trim() || "Team Rot";
-
-  // TIMER
   let showTimer = false;
   let timer = 10;
   let timerInterval;
 
-  // POPUP
-  let popupMessage = "";
   let showPopup = false;
+  let popupMessage = "";
   let popupTimeout;
+
+  const wrongLabel = "Falsch";
+  const skipLabel = "Überspringen";
+  const endLabel = "Spiel beenden";
 
   function showMessage(msg) {
     popupMessage = msg;
     showPopup = true;
     clearTimeout(popupTimeout);
-    popupTimeout = setTimeout(() => (showPopup = false), 2200);
+    popupTimeout = setTimeout(() => {
+      showPopup = false;
+    }, 2200);
   }
 
-  // =========================================
-  //              DATEI-UPLOAD
-  // =========================================
-  function handleFileUpload(event) {
-    file = event.target.files[0];
-    if (!file) return;
+  async function handleFileUpload(event) {
+    file = event.target.files?.[0] ?? null;
+    fileError = "";
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      customTasks = reader.result
-        .split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 2);
-    };
-    reader.readAsText(file);
+    if (!file) {
+      customTasks = [];
+      return;
+    }
+
+    try {
+      customTasks = await readMaterialLines(file);
+    } catch (error) {
+      console.error("Material konnte nicht gelesen werden:", error);
+      fileError =
+        error?.message || "Die Datei konnte nicht verarbeitet werden.";
+      customTasks = [];
+      file = null;
+      event.target.value = "";
+    }
   }
 
-  // =========================================
-  //           MANUELLE AUFGABEN
-  // =========================================
   function processManualInput() {
     customTasks = manualInput
       .split("\n")
-      .map(l => l.trim())
-      .filter(l => l.length > 2);
+      .map((line) => line.trim())
+      .filter((line) => line.length > 2);
   }
 
-  // =========================================
-  //          AUFGABEN GENERIEREN
-  // =========================================
-  function generateQuestions() {
-    questions = [];
+  function buildQuestionPool() {
+    const pool = [];
 
-    // Priorität 1: Datei oder manuelle Eingabe
     if ((file || useManualInput) && customTasks.length > 0) {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(customTasks[Math.floor(Math.random() * customTasks.length)]);
+      for (let i = 0; i < numQuestions; i += 1) {
+        pool.push(
+          customTasks[Math.floor(Math.random() * customTasks.length)]
+        );
+      }
+    } else if (taskTypes.syllables) {
+      for (let i = 0; i < numQuestions; i += 1) {
+        const word =
+          syllableWords[Math.floor(Math.random() * syllableWords.length)];
+        pool.push(`Bestimme die Silben: ${word}`);
+      }
+    } else if (taskTypes.capitalization) {
+      for (let i = 0; i < numQuestions; i += 1) {
+        const sentence =
+          capitalizationSentences[
+            Math.floor(Math.random() * capitalizationSentences.length)
+          ];
+        pool.push(`Schreibe richtig: "${sentence}"`);
+      }
+    } else if (taskTypes.articles) {
+      for (let i = 0; i < numQuestions; i += 1) {
+        const word =
+          articleWords[Math.floor(Math.random() * articleWords.length)];
+        pool.push(`Welcher Artikel passt? (der/die/das) → ${word}`);
+      }
+    } else {
+      for (let i = 0; i < numQuestions; i += 1) {
+        pool.push(
+          autoQuestions[Math.floor(Math.random() * autoQuestions.length)]
+        );
       }
     }
 
-    // Silben bestimmen
-    else if (taskTypes.syllables) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = syllableWords[Math.floor(Math.random() * syllableWords.length)];
-        questions.push(`Bestimme die Silben: ${w}`);
-      }
-    }
+    return pool.map((text, index) => ({
+      id: index + 1,
+      question: text
+    }));
+  }
 
-    // Groß-Klein-Schreibung
-    else if (taskTypes.capitalization) {
-      for (let i = 0; i < numQuestions; i++) {
-        const s = capitalizationSentences[Math.floor(Math.random() * capitalizationSentences.length)];
-        questions.push(`Schreibe richtig: "${s}"`);
-      }
-    }
-
-    // Artikel bestimmen
-    else if (taskTypes.articles) {
-      for (let i = 0; i < numQuestions; i++) {
-        const w = articleWords[Math.floor(Math.random() * articleWords.length)];
-        questions.push(`Welcher Artikel passt? (der/die/das) → ${w}`);
-      }
-    }
-
-    // Standardgenerator
-    else {
-      for (let i = 0; i < numQuestions; i++) {
-        questions.push(autoQuestions[Math.floor(Math.random() * autoQuestions.length)]);
-      }
-    }
-
+  function generateQuestions() {
+    questions = buildQuestionPool();
     gameStarted = true;
     gameOver = false;
     currentQuestionIndex = 0;
@@ -165,11 +181,9 @@
     redScore = 0;
     blueScore = 0;
     showPopup = false;
+    stopTimer();
   }
 
-  // =========================================
-  //               SPIELLOGIK
-  // =========================================
   function moveBall(team) {
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
@@ -188,22 +202,29 @@
   function wrongAnswer() {
     showTimer = true;
     timer = 10;
-
+    clearInterval(timerInterval);
     timerInterval = setInterval(() => {
-      timer--;
-      if (timer <= 0) stopTimer();
+      timer -= 1;
+      if (timer <= 0) {
+        stopTimer();
+        nextQuestion();
+      }
     }, 1000);
   }
 
   function stopTimer() {
-    clearInterval(timerInterval);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
     showTimer = false;
+    timer = 10;
   }
 
   function nextQuestion() {
     stopTimer();
     if (currentQuestionIndex < questions.length - 1) {
-      currentQuestionIndex++;
+      currentQuestionIndex += 1;
     } else {
       endGame();
     }
@@ -223,11 +244,15 @@
     resetField();
   }
 
-  function forceEndGame() {
+  function resetGame() {
     gameStarted = false;
-    gameOver = true;
-    showMessage("🛑 Spiel wurde manuell beendet!");
+    gameOver = false;
+    questions = [];
+    currentQuestionIndex = 0;
+    redScore = 0;
+    blueScore = 0;
     resetField();
+    showPopup = false;
   }
 
   function goBack() {
@@ -247,51 +272,22 @@
 
   onDestroy(() => {
     clearTimeout(popupTimeout);
+    stopTimer();
   });
 </script>
 
 {#if !gameStarted && !gameOver}
-  <main class="config">
-    <h1>Deutsch – Wandtafelspiel</h1>
-
-    <div class="team-card-grid">
-      <div class="team-card blue">
-        <div class="team-card-header">
-          <span class="team-icon">👕</span>
-          <div>
-            <p class="team-title">Team Blau</p>
-            <p class="team-desc">Standardname, falls leer</p>
-          </div>
-        </div>
-        <input type="text" placeholder="Team Blau" bind:value={blueTeamName} />
-      </div>
-      <div class="team-card red">
-        <div class="team-card-header">
-          <span class="team-icon">👕</span>
-          <div>
-            <p class="team-title">Team Rot</p>
-            <p class="team-desc">Standardname, falls leer</p>
-          </div>
-        </div>
-        <input type="text" placeholder="Team Rot" bind:value={redTeamName} />
-      </div>
-    </div>
-
-    <p class="info-text">
-      Wenn kein Name eingegeben wird, heißen die Teams automatisch „Team Blau“ und „Team Rot“.
-    </p>
-
-    <div class="settings-card">
-      <h2>Aufgaben & Einstellungen</h2>
-
-      <div class="input-row">
-        <label>
-          Anzahl der Fragen
-          <input type="number" min="1" max="50" bind:value={numQuestions} />
-        </label>
-      </div>
-
-      <div class="ops">
+  <SetupScreen
+    title="Deutsch – Wandtafelspiel"
+    infoText="Wenn die Felder leer bleiben, heißen die Teams automatisch „Team Blau“ und „Team Rot“."
+    bind:blueTeamName
+    bind:redTeamName
+    bind:numQuestions
+    on:back={goBack}
+    on:start={generateQuestions}
+  >
+    <div class="extra-settings">
+      <div class="task-grid">
         <p class="group-label">Aufgabentyp</p>
         <label>
           <input type="checkbox" bind:checked={taskTypes.syllables} />
@@ -308,12 +304,14 @@
       </div>
 
       <label class="file-label">
-        Unterrichtsstoff (optional, jede Aufgabe in eigene Zeile)
-        <input type="file" accept=".txt" on:change={handleFileUpload} />
+        Unterrichtsstoff (TXT oder PDF, optional)
+        <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
       </label>
-
       {#if file}
-        <p class="fileInfo">📄 Datei geladen: {file.name}</p>
+        <p class="file-info">📄 Datei geladen: {file.name}</p>
+      {/if}
+      {#if fileError}
+        <p class="file-error">{fileError}</p>
       {/if}
 
       <label class="toggle">
@@ -324,246 +322,87 @@
       {#if useManualInput}
         <textarea
           rows="6"
-          placeholder="Beispiele:
-Artikel einsetzen
-Plural bilden
-Sätze korrigieren…"
+          placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
           bind:value={manualInput}
           on:input={processManualInput}
         ></textarea>
       {/if}
-
-      <div class="action-buttons">
-        <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
-        <button class="btn-primary" on:click={generateQuestions}>
-          Spiel starten
-        </button>
-      </div>
     </div>
-  </main>
-{:else if gameStarted}
-  <main class="game">
-    <div class="scoreboard">
-      <button
-        type="button"
-        class="score-card blue-card"
-        on:click={() => moveBall('blue')}
-        aria-label={`Punkt für ${blueTeamLabel}`}
-      >
-        <span class="score-team">{blueTeamLabel}</span>
-        <span class="score-value">{blueScore}</span>
-      </button>
-      <button
-        type="button"
-        class="score-card red-card"
-        on:click={() => moveBall('red')}
-        aria-label={`Punkt für ${redTeamLabel}`}
-      >
-        <span class="score-team">{redTeamLabel}</span>
-        <span class="score-value">{redScore}</span>
-      </button>
-    </div>
-
-    <h2>Frage {currentQuestionIndex + 1} von {questions.length}</h2>
-    <div class="question">{questions[currentQuestionIndex]}</div>
-
-    <div class="field-wrapper">
-      <SoccerField
-        position={ballPosition}
-        maxPosition={maxBallPosition}
-      />
-    </div>
-
-    {#if showTimer}
-      <div class="timer">⏱ {timer}s</div>
-    {/if}
-
-    <div class="buttons">
-      <button class="btn-neutral" on:click={wrongAnswer}>Falsch</button>
-      <button class="btn-neutral" on:click={nextQuestion}>Überspringen</button>
-      <button class="btn-neutral" on:click={forceEndGame}>Spiel beenden</button>
-    </div>
-  </main>
-{:else}
-  <main class="end">
-    <h1>Spiel beendet</h1>
-
-    {#if redScore > blueScore}
-      <h2>{redTeamLabel} gewinnt!</h2>
-    {:else if blueScore > redScore}
-      <h2>{blueTeamLabel} gewinnt!</h2>
-    {:else}
-      <h2>Unentschieden!</h2>
-    {/if}
-
-    <div class="scores">
-      <div class="team team-blue">
-        <div class="label">{blueTeamLabel}</div>
-        <div class="value">{blueScore}</div>
-      </div>
-      <div class="team team-red">
-        <div class="label">{redTeamLabel}</div>
-        <div class="value">{redScore}</div>
-      </div>
-    </div>
-
-    <button class="btn-primary" on:click={generateQuestions}>Neues Spiel starten</button>
-    <button class="btn-secondary" on:click={goBack}>⬅️ Zurück</button>
-  </main>
+  </SetupScreen>
 {/if}
 
-{#if showPopup}
-  <div class="goal-popup">{popupMessage}</div>
+{#if gameStarted && !gameOver}
+  <ActiveGameScreen
+    {blueTeamLabel}
+    {redTeamLabel}
+    {blueScore}
+    {redScore}
+    currentQuestionIndex={currentQuestionIndex}
+    {questions}
+    {ballPosition}
+    {maxBallPosition}
+    {showTimer}
+    {timer}
+    {wrongLabel}
+    {skipLabel}
+    {endLabel}
+    on:score={(event) => moveBall(event.detail.team)}
+    on:wrong={wrongAnswer}
+    on:skip={nextQuestion}
+    on:end={endGame}
+  />
 {/if}
+
+{#if gameOver}
+  <EndScreen
+    {blueTeamLabel}
+    {redTeamLabel}
+    {blueScore}
+    {redScore}
+    on:restart={resetGame}
+    on:back={goBack}
+  />
+{/if}
+
+<GoalPopup message={popupMessage} visible={showPopup} />
 
 <style>
-  main {
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
-  }
-
-  .config {
-    min-height: 100vh;
-    padding: 60px 24px 80px;
-    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
+  .extra-settings {
     display: flex;
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .task-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-grid label {
+    display: flex;
+    gap: 8px;
     align-items: center;
-    text-align: left;
-  }
-
-  .config h1 {
-    font-size: 2.4rem;
-    margin-bottom: 32px;
-    text-align: center;
-    color: #0f172a;
-  }
-
-  .team-card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
-    gap: 24px;
-    width: min(960px, 100%);
-    margin-bottom: 28px;
-  }
-
-  .team-card {
-    background: white;
-    border-radius: 28px;
-    padding: 32px;
-    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
-    border: 2px solid transparent;
-    box-sizing: border-box;
-    min-height: 180px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .team-card.blue {
-    border-color: #60a5fa;
-  }
-
-  .team-card.red {
-    border-color: #f87171;
-  }
-
-  .team-card-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .team-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 999px;
-    display: grid;
-    place-items: center;
-    color: white;
-    font-size: 1.8rem;
-  }
-
-  .team-card.blue .team-icon {
-    background: linear-gradient(135deg, #60a5fa, #2563eb);
-  }
-
-  .team-card.red .team-icon {
-    background: linear-gradient(135deg, #f87171, #dc2626);
-  }
-
-  .team-card input {
-    width: 100%;
-    padding: 14px 18px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    background: white;
-    box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.05);
-    box-sizing: border-box;
-  }
-
-  .info-text {
-    margin: 16px 0 28px;
-    text-align: center;
-    color: #475569;
-    font-size: 0.95rem;
-  }
-
-  .settings-card {
-    width: min(960px, 100%);
-    background: white;
-    border-radius: 32px;
-    padding: 32px;
-    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.1);
-    text-align: left;
-  }
-
-  .input-row {
-    margin-bottom: 20px;
-  }
-
-  .ops {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin: 16px 0;
-  }
-
-  .group-label {
-    font-weight: 600;
-    margin-bottom: 0.4rem;
-    color: #0f172a;
+    font-weight: 500;
   }
 
   .file-label {
     display: flex;
     flex-direction: column;
-    font-weight: 600;
-    color: #0f172a;
-    margin-bottom: 12px;
+    gap: 8px;
+    font-weight: 500;
   }
 
-  .file-label input {
-    margin-top: 6px;
-  }
-
-  textarea {
-    width: 100%;
-    padding: 1rem;
-    border-radius: 16px;
-    border: 2px solid #cbd5e1;
-    resize: vertical;
-    font-size: 1rem;
-    background: #f8fafc;
-  }
-
-  .fileInfo {
+  .file-info {
+    margin: 0;
+    color: #475569;
     font-size: 0.9rem;
-    color: #555;
+  }
+
+  .file-error {
+    margin: 0;
+    color: #dc2626;
+    font-size: 0.9rem;
   }
 
   .toggle {
@@ -571,227 +410,15 @@ Sätze korrigieren…"
     align-items: center;
     gap: 10px;
     font-weight: 500;
-    color: #0f172a;
-    margin: 12px 0;
   }
 
-  .action-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 16px;
-    margin-top: 24px;
-  }
-
-  .game,
-  .end {
-    max-width: 1100px;
-    margin: 40px auto;
-    text-align: center;
-  }
-
-  .game {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-  }
-
-  .game h2,
-  .end h1 {
-    margin-bottom: 20px;
-  }
-
-  .question {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 20px;
-  }
-
-  .field-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 10px 0 20px;
-  }
-
-  .scoreboard {
-    display: flex;
-    gap: 20px;
-    justify-content: space-between;
+  textarea {
     width: 100%;
-  }
-
-  .score-card {
-    flex: 1;
-    border: none;
-    border-radius: 24px;
-    padding: 22px 28px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left;
-    cursor: pointer;
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .score-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.25);
-  }
-
-  .score-card:active {
-    transform: scale(0.98);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
-  }
-
-  .score-card:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.6);
-    outline-offset: 4px;
-  }
-
-  .score-card.blue-card {
-    background: linear-gradient(135deg, #60a5fa, #2563eb);
-  }
-
-  .score-card.red-card {
-    background: linear-gradient(135deg, #f87171, #dc2626);
-  }
-
-  .score-team {
-    font-size: 1.1rem;
-  }
-
-  .score-value {
-    font-size: 3rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .scores {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin: 10px 0 20px;
-  }
-
-  .team .label {
-    font-size: 0.9rem;
-  }
-
-  .team .value {
-    font-size: 2rem;
-    font-weight: 700;
-  }
-
-  .team-blue .value {
-    color: #2563eb;
-  }
-
-  .team-red .value {
-    color: #dc2626;
-  }
-
-  .buttons {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 10px;
-  }
-
-  .btn-red,
-  .btn-blue,
-  .btn-neutral {
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: 2px solid #444;
-    cursor: pointer;
-    font-weight: 500;
-    min-width: 140px;
-  }
-
-  .btn-red {
-    background: #dc2626;
-    color: white;
-    border-color: #b91c1c;
-  }
-
-  .btn-blue {
-    background: #2563eb;
-    color: white;
-    border-color: #1d4ed8;
-  }
-
-  .btn-neutral {
-    background: #e5e7eb;
-    color: #111827;
-    border-color: #6b7280;
-  }
-
-  .btn-primary,
-  .btn-secondary {
-    padding: 10px 20px;
-    border-radius: 999px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    margin-top: 1rem;
-  }
-
-  .btn-primary {
-    background: #2563eb;
-    color: white;
-  }
-
-  .btn-secondary {
-    background: transparent;
-    color: #2563eb;
-    border: 2px solid #2563eb;
-  }
-
-  .timer {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #f59e0b;
-    margin: 16px 0;
-  }
-
-  .goal-popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 1.2rem 2rem;
-    font-size: 1.6rem;
-    font-weight: 700;
-    background: white;
     border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    animation: popupFade 1.5s ease forwards;
-    z-index: 1000;
-  }
-
-  @keyframes popupFade {
-    0% {
-      opacity: 0;
-      transform: translate(-50%, -60%);
-    }
-    15%,
-    85% {
-      opacity: 1;
-      transform: translate(-50%, -50%);
-    }
-    100% {
-      opacity: 0;
-      transform: translate(-50%, -40%);
-    }
-  }
-
-  @media (max-width: 720px) {
-    .scoreboard {
-      flex-direction: column;
-    }
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
   }
 </style>

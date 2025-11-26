@@ -54,7 +54,9 @@ const hideNavRoutes = new Set(["/login", "/"]);
 
 {#if !isNavHidden}
   <header class="global-bar">
-    <div class="brand">EduPlay</div>
+    <button type="button" class="brand" on:click={() => goto("/start")}>
+      EduPlay
+    </button>
     <button
       type="button"
       class="session-button"
@@ -94,6 +96,10 @@ const hideNavRoutes = new Set(["/login", "/"]);
   }
 
   .brand {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
     font-size: 1.8rem;
     font-weight: 700;
     background: linear-gradient(90deg, #4f46e5, #7c3aed);
