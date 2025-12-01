@@ -1,4 +1,4 @@
-# Projektdokumentation – [Projekttitel]
+# Projektdokumentation – [EduPlay - Wandtafelfussball]
 
 ## Inhaltsverzeichnis
 

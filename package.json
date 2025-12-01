@@ -22,6 +22,7 @@
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.81.1",
+		"mongodb": "^7.0.0",
 		"pdfjs-dist": "^5.4.394"
 	}
 }

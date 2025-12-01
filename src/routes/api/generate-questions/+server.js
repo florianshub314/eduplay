@@ -87,8 +87,7 @@ export async function POST({ request }) {
     }
 
     const prompt = `Erstelle ${numQuestions} kurze Quizfragen passend zu folgendem Kontext.
-Für jede Frage den folgenden JSON verwenden: {"question":"...", "hint":"optional kurzer Tipp"}.
-Es dürfen offene Fragen sein, keine Mehrfachauswahl. Antworten nicht mitsenden.
+Es dürfen offene Fragen sein, keine Mehrfachauswahl. Antworten oder Hinweise nicht mitsenden.
 
 ${contextParts.join("\n\n")}
 

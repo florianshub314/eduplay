@@ -44,28 +44,42 @@ async function extractTextFromPdf(file) {
   return content;
 }
 
+function isPdfFile(file) {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  return (
+    file.type === "application/pdf" ||
+    file.type === "application/x-pdf" ||
+    extension === "pdf"
+  );
+}
+
 async function extractTextFromFile(file) {
   if (!file) throw new Error("Keine Datei gewählt.");
 
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  const isPdf =
-    file.type === "application/pdf" ||
-    file.type === "application/x-pdf" ||
-    extension === "pdf";
-
-  if (isPdf) {
+  if (isPdfFile(file)) {
     return extractTextFromPdf(file);
   }
 
   return file.text();
 }
 
-export async function readMaterialLines(file) {
+export async function parseMaterialFile(file) {
   const text = await extractTextFromFile(file);
-  return text
+  const lines = text
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter((line) => line.length > 0);
+
+  return {
+    text,
+    lines,
+    isPdf: isPdfFile(file)
+  };
+}
+
+export async function readMaterialLines(file) {
+  const parsed = await parseMaterialFile(file);
+  return parsed.lines;
 }
 
 export function buildMaterialSnippet(lines = [], maxChars = 4000) {
@@ -74,3 +88,5 @@ export function buildMaterialSnippet(lines = [], maxChars = 4000) {
   if (combined.length <= maxChars) return combined;
   return combined.slice(0, maxChars);
 }
+
+export { isPdfFile };

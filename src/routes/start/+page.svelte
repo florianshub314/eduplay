@@ -1,6 +1,6 @@
 <script>
   import { goto } from "$app/navigation";
-  const subjects = [
+const subjects = [
     {
       icon: "📘",
       title: "Mathematik",
@@ -30,6 +30,12 @@
       title: "Andere Fächer",
       desc: "Konfiguration für diverse Themen",
       action: () => goto("/andere")
+    },
+    {
+      icon: "💾",
+      title: "Gespeicherte Sets",
+      desc: "Vorbereitete Fragen- und KI-Sets",
+      action: () => goto("/sets")
     }
   ];
 </script>

@@ -7,8 +7,10 @@
   import GoalPopup from "$lib/components/game/GoalPopup.svelte";
   import {
     buildMaterialSnippet,
-    readMaterialLines
+    parseMaterialFile
   } from "$lib/utils/materialParser";
+  import { cleanQuestionText } from "$lib/utils/questionFormatter";
+  import { saveQuestionSet } from "$lib/utils/setStorage.js";
 
   let numQuestions = 10;
   let topic = "";
@@ -21,6 +23,8 @@
   let aiError = "";
   let aiInstructions = "";
   let fileError = "";
+  let materialText = "";
+  let isPdfUpload = false;
 
   let blueTeamName = "";
   let redTeamName = "";
@@ -48,6 +52,12 @@
   let showPopup = false;
   let popupMessage = "";
   let goalResetTimeout;
+  let popupVariant = "neutral";
+
+  let saveTitle = "";
+  let savingSet = false;
+  let saveStatus = "";
+  let saveError = "";
 
   const genericTemplates = [
     (t, i) => `Frage ${i + 1} zum Thema ${t}: Erkläre den wichtigsten Begriff.`,
@@ -64,6 +74,7 @@
 
   function handleGoal(team) {
     popupMessage = goalMessages[team];
+    popupVariant = team === "red" ? "red" : "blue";
     showPopup = true;
 
     if (team === "red") {
@@ -119,6 +130,7 @@
     clearTimeout(goalResetTimeout);
     showPopup = false;
     resetBall();
+    popupVariant = "neutral";
   }
 
   function resetGame() {
@@ -131,11 +143,15 @@
     ballPosition = 0;
     showPopup = false;
     clearTimeout(goalResetTimeout);
+    popupVariant = "neutral";
   }
 
   async function handleFileUpload(event) {
     file = event.target.files?.[0] ?? null;
     fileError = "";
+    aiError = "";
+    materialText = "";
+    isPdfUpload = false;
 
     if (!file) {
       uploadedLines = [];
@@ -143,12 +159,17 @@
     }
 
     try {
-      uploadedLines = await readMaterialLines(file);
+      const parsed = await parseMaterialFile(file);
+      uploadedLines = parsed.lines;
+      materialText = parsed.text;
+      isPdfUpload = parsed.isPdf;
     } catch (error) {
       console.error("Material konnte nicht gelesen werden:", error);
       fileError =
         error?.message || "Die Datei konnte nicht verarbeitet werden.";
       uploadedLines = [];
+      materialText = "";
+      isPdfUpload = false;
       file = null;
       event.target.value = "";
     }
@@ -194,7 +215,7 @@
   function startGameWith(list) {
     questions = list.map((question, index) => ({
       id: index + 1,
-      question
+      question: cleanQuestionText(question)
     }));
     gameStarted = true;
     gameOver = false;
@@ -205,19 +226,63 @@
     showPopup = false;
   }
 
-  function generateQuestions() {
+  async function saveCurrentQuestions() {
+    saveStatus = "";
+    saveError = "";
+
+    if (questions.length === 0) {
+      saveError = "Es gibt noch keine Fragen zum Speichern.";
+      return;
+    }
+
+    try {
+      savingSet = true;
+      const set = await saveQuestionSet({
+        title: saveTitle,
+        subject: "andere",
+        questions
+      });
+      saveStatus = `Gespeichert als „${set.title}“`;
+      saveTitle = set.title;
+    } catch (error) {
+      saveError = error.message || "Speichern fehlgeschlagen.";
+    } finally {
+      savingSet = false;
+    }
+  }
+
+  async function generateQuestions() {
+    if (aiLoading) return;
+
+    if (isPdfUpload && materialText) {
+      const lines =
+        uploadedLines.length > 0
+          ? uploadedLines
+          : materialText
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => line.length > 0);
+      const snippet = buildMaterialSnippet(lines);
+      if (snippet) {
+        const ok = await generateQuestionsWithAI({ materialSnippet: snippet });
+        if (ok) return;
+        return;
+      }
+    }
+
     const list = createQuestionList();
     startGameWith(list);
   }
 
-  async function generateQuestionsWithAI() {
+  async function generateQuestionsWithAI(options = {}) {
     const trimmedTopic = topic.trim();
-    const materialSnippet = buildMaterialSnippet(getMaterialLines());
+    const materialSnippet =
+      options.materialSnippet ?? buildMaterialSnippet(getMaterialLines());
     const instructions = aiInstructions.trim();
 
     if (!trimmedTopic && !materialSnippet) {
       aiError = "Bitte gib ein Thema ein oder lade Unterrichtsmaterial hoch.";
-      return;
+      return false;
     }
 
     aiLoading = true;
@@ -251,8 +316,10 @@
       }
 
       startGameWith(list);
+      return true;
     } catch (error) {
       aiError = error.message || "Unbekannter Fehler";
+      return false;
     } finally {
       aiLoading = false;
     }
@@ -293,6 +360,12 @@
         {/if}
         {#if fileError}
           <p class="file-error">{fileError}</p>
+        {/if}
+        {#if aiLoading}
+          <p class="file-info">🤖 KI analysiert das Material …</p>
+        {/if}
+        {#if aiError}
+          <p class="file-error">{aiError}</p>
         {/if}
       </div>
 
@@ -371,7 +444,38 @@
   />
 {/if}
 
-<GoalPopup message={popupMessage} visible={showPopup} />
+<GoalPopup message={popupMessage} visible={showPopup} variant={popupVariant} />
+
+{#if questions.length > 0}
+  <section class="set-save-panel">
+    <div>
+      <h3>Fragen-Set speichern</h3>
+      <p>Vergib einen Titel und sichere dieses Set für spätere Spiele.</p>
+    </div>
+    <div class="save-actions">
+      <input
+        type="text"
+        placeholder="Titel des Sets"
+        bind:value={saveTitle}
+        aria-label="Titel des Sets"
+      />
+      <button
+        class="btn-primary"
+        type="button"
+        on:click={saveCurrentQuestions}
+        disabled={savingSet}
+      >
+        {savingSet ? "Speichere …" : "Set speichern"}
+      </button>
+    </div>
+    {#if saveStatus}
+      <p class="save-status">{saveStatus}</p>
+    {/if}
+    {#if saveError}
+      <p class="file-error">{saveError}</p>
+    {/if}
+  </section>
+{/if}
 
 <style>
   .extra-settings {
@@ -460,5 +564,39 @@
     margin: 0;
     color: #dc2626;
     font-weight: 500;
+  }
+
+  .set-save-panel {
+    max-width: 960px;
+    margin: 24px auto 80px;
+    padding: 20px;
+    border-radius: 24px;
+    border: 2px solid #cbd5f5;
+    background: #fff;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .save-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .save-actions input {
+    flex: 1;
+    min-width: 220px;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    font-size: 1rem;
+  }
+
+  .save-status {
+    margin: 0;
+    color: #16a34a;
+    font-weight: 600;
   }
 </style>
