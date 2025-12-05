@@ -5,12 +5,17 @@
   import ActiveGameScreen from "$lib/components/game/ActiveGameScreen.svelte";
   import EndScreen from "$lib/components/game/EndScreen.svelte";
   import GoalPopup from "$lib/components/game/GoalPopup.svelte";
+import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
+import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
   import {
     buildMaterialSnippet,
     parseMaterialFile
   } from "$lib/utils/materialParser";
   import { cleanQuestionText } from "$lib/utils/questionFormatter";
   import { saveQuestionSet } from "$lib/utils/setStorage.js";
+  import { pickUniqueRandomItems } from "$lib/utils/randomHelpers.js";
+  import { requestAiQuestions } from "$lib/utils/aiQuestionGenerator.js";
+  import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
 
   // =======================
   //   KONFIGURATION
@@ -73,6 +78,10 @@
   let savingSet = false;
   let saveStatus = "";
   let saveError = "";
+  let aiInstructions = "";
+let winnerPopupVisible = false;
+let winnerName = "";
+let winnerSubtitle = "";
 
   // =======================
   //   FRAGEN GENERIEREN
@@ -129,7 +138,8 @@
   }
 
   async function handleFileUpload(event) {
-    file = event.target.files?.[0] ?? null;
+    const fileList = event?.detail?.files ?? event?.target?.files;
+    file = fileList?.[0] ?? null;
     fileError = "";
     aiError = "";
     materialText = "";
@@ -164,6 +174,12 @@
       .filter((line) => line.length > 0);
   }
 
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
   async function generateQuestionsFromPdf() {
     if (!materialText.trim()) {
       aiError = "Das PDF scheint leer zu sein.";
@@ -187,25 +203,14 @@
     aiError = "";
 
     try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: "math",
-          material: snippet,
-          instructions:
-            "Erstelle Matheaufgaben (Kopfrechnen oder Sachaufgaben) passend zum bereitgestellten Unterrichtsmaterial. Gib nur die Aufgabenstellung ohne Lösung aus.",
-          fileName: file?.name,
-          numQuestions
-        })
+      const list = await requestAiQuestions({
+        subject: "math",
+        material: snippet,
+        instructions:
+          "Erstelle Matheaufgaben (Kopfrechnen oder Sachaufgaben) passend zum bereitgestellten Unterrichtsmaterial. Gib nur die Aufgabenstellung ohne Lösung aus.",
+        fileName: file?.name,
+        numQuestions
       });
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        throw new Error(json.error || "Die KI konnte keine Fragen erzeugen.");
-      }
-
-      const list = json.questions ?? [];
-      if (!list.length) throw new Error("Die KI hat keine Aufgaben geliefert.");
 
       questions = list.map((entry, index) => ({
         id: index + 1,
@@ -239,13 +244,17 @@
     const customLines = getCustomQuestionLines();
 
     if (customLines.length > 0) {
-      questions = [];
-      for (let i = 0; i < numQuestions; i += 1) {
-        const text =
-          customLines[Math.floor(Math.random() * customLines.length)];
-        questions.push({ question: cleanQuestionText(text), answer: null });
-      }
+      const uniqueLines = pickUniqueRandomItems(customLines, numQuestions);
+      questions = uniqueLines.map((text) => ({
+        question: cleanQuestionText(text),
+        answer: null
+      }));
       currentQuestionIndex = 0;
+      return true;
+    }
+
+    const created = await generateQuestionsWithAiSettings();
+    if (created) {
       return true;
     }
 
@@ -255,6 +264,71 @@
     }
     currentQuestionIndex = 0;
     return true;
+  }
+
+  function buildMathAiMaterial(customLines) {
+    if (customLines.length > 0) {
+      return `Beispielaufgaben oder Notizen:\n${customLines.join("\n")}`;
+    }
+
+    const opNames = operations
+      .filter((op) => selectedOps.includes(op.symbol))
+      .map((op) => `${op.symbol} (${op.name})`);
+
+    const lines = [
+      `Benötigt werden ${numQuestions} Aufgaben.`,
+      `Zahlenraum: ${minNumber} bis ${maxNumber}`,
+      `Erlaubte Rechenarten: ${opNames.join(", ") || "keine"}.`,
+      useDecimals
+        ? "Dezimalzahlen sind erlaubt."
+        : "Nur ganze Zahlen verwenden.",
+      allowNegatives
+        ? "Negative Zahlen dürfen vorkommen."
+        : "Keine negativen Ergebnisse verwenden."
+    ];
+    return lines.join("\n");
+  }
+
+  async function generateQuestionsWithAiSettings() {
+    const customLines = getCustomQuestionLines();
+    const material = buildMathAiMaterial(customLines);
+    if (!material.trim()) {
+      aiError =
+        "Bitte gib eigene Aufgaben oder Einstellungen an, damit die KI Fragen erstellen kann.";
+      return false;
+    }
+
+    aiLoading = true;
+    aiError = "";
+
+    try {
+      const baseInstruction =
+        "Erstelle ausschließlich kurze Kopfrechenaufgaben im Format „a + b“, „a - b“, „a × b“ oder „a ÷ b“ (keine Sachaufgaben, keine längeren Texte). Nutze nur die erlaubten Rechenarten und gib nur die Aufgabe ohne Lösung zurück.";
+      const instructionText = [baseInstruction, aiInstructions.trim()]
+        .filter(Boolean)
+        .join(" ");
+      const list = await requestAiQuestions({
+        subject: "math",
+        material,
+        instructions: instructionText,
+        fileName: file?.name,
+        numQuestions
+      });
+      questions = list.map((entry, index) => ({
+        id: index + 1,
+        question: cleanQuestionText(entry.question),
+        answer: entry.answer ?? null
+      }));
+      currentQuestionIndex = 0;
+      saveStatus = "";
+      saveError = "";
+      return true;
+    } catch (error) {
+      aiError = error.message || "Die KI konnte keine Fragen erzeugen.";
+      return false;
+    } finally {
+      aiLoading = false;
+    }
   }
 
   // =======================
@@ -280,6 +354,8 @@
 
     gameStarted = true;
     gameOver = false;
+    winnerPopupVisible = false;
+    scrollToTop();
   }
 
   function nextQuestion() {
@@ -296,6 +372,17 @@
     gameOver = true;
     clearTimeout(goalResetTimeout);
     showPopup = false;
+    if (redScore > blueScore) {
+      winnerName = redTeamLabel;
+      winnerSubtitle = `Endstand ${redScore} : ${blueScore}`;
+    } else if (blueScore > redScore) {
+      winnerName = blueTeamLabel;
+      winnerSubtitle = `Endstand ${blueScore} : ${redScore}`;
+    } else {
+      winnerName = "Unentschieden";
+      winnerSubtitle = "Beide Teams haben gleich viele Punkte.";
+    }
+    winnerPopupVisible = true;
     resetBallToCenter();
     stopTimer();
   }
@@ -351,6 +438,7 @@
     popupVariant = "neutral";
     saveStatus = "";
     saveError = "";
+    winnerPopupVisible = false;
   }
 
   async function saveCurrentQuestions() {
@@ -471,18 +559,16 @@
 
     <div class="material-section">
       <p class="group-label">Unterrichtsmaterial (optional)</p>
-      <label class="file-label">
-        Datei (TXT oder PDF)
-        <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
-      </label>
-      {#if file}
-        <p class="file-info">📄 Datei geladen: {file.name}</p>
-      {/if}
+      <FileDropzone
+        label="Datei (TXT oder PDF)"
+        accept=".txt,.pdf"
+        on:change={handleFileUpload}
+        fileName={file?.name}
+        loading={aiLoading}
+        description="Ziehe das Material hierher oder tippe zum Auswählen."
+      />
       {#if fileError}
         <p class="file-error">{fileError}</p>
-      {/if}
-      {#if aiLoading}
-        <p class="file-info">🤖 KI analysiert das Dokument …</p>
       {/if}
       {#if aiError}
         <p class="file-error">{aiError}</p>
@@ -507,6 +593,13 @@
           {availableCustomQuestions} eigene Aufgaben verfügbar
         </p>
       {/if}
+
+      <label class="group-label">Zusatzwünsche an die KI (optional)</label>
+      <textarea
+        rows="3"
+        placeholder="z. B. leichte Sachaufgaben, Fokus auf Division ..."
+        bind:value={aiInstructions}
+      ></textarea>
     </div>
   </SetupScreen>
 {/if}
@@ -547,36 +640,22 @@
   variant={popupVariant}
 />
 
-{#if questions.length > 0}
-  <section class="set-save-panel">
-    <div>
-      <h3>Fragen-Set speichern</h3>
-      <p>Bewahre diese Aufgaben als Set auf, um sie später über /sets zu laden.</p>
-    </div>
-    <div class="save-actions">
-      <input
-        type="text"
-        placeholder="Titel des Sets"
-        bind:value={saveTitle}
-        aria-label="Titel des Sets"
-      />
-      <button
-        class="btn-primary"
-        type="button"
-        on:click={saveCurrentQuestions}
-        disabled={savingSet}
-      >
-        {savingSet ? "Speichere …" : "Set speichern"}
-      </button>
-    </div>
-    {#if saveStatus}
-      <p class="save-status">{saveStatus}</p>
-    {/if}
-    {#if saveError}
-      <p class="file-error">{saveError}</p>
-    {/if}
-  </section>
-{/if}
+<WinnerPopup
+  visible={winnerPopupVisible}
+  winner={winnerName}
+  subtitle={winnerSubtitle}
+  on:close={() => (winnerPopupVisible = false)}
+/>
+
+<SaveSetPanel
+  visible={questions.length > 0}
+  description="Bewahre diese Aufgaben als Set auf, um sie später über /sets zu laden."
+  bind:saveTitle
+  saving={savingSet}
+  status={saveStatus}
+  error={saveError}
+  on:save={saveCurrentQuestions}
+/>
 
 <style>
   .range-row {
@@ -691,37 +770,4 @@
     resize: vertical;
   }
 
-  .set-save-panel {
-    max-width: 960px;
-    margin: 24px auto 80px;
-    padding: 20px;
-    border-radius: 24px;
-    border: 2px solid #cbd5f5;
-    background: #fff;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .save-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .save-actions input {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .save-status {
-    margin: 0;
-    color: #16a34a;
-    font-weight: 600;
-  }
 </style>

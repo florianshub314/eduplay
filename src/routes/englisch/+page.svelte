@@ -11,6 +11,11 @@
   } from "$lib/utils/materialParser";
   import { cleanQuestionText } from "$lib/utils/questionFormatter";
   import { saveQuestionSet } from "$lib/utils/setStorage.js";
+  import { requestAiQuestions } from "$lib/utils/aiQuestionGenerator.js";
+  import { pickUniqueRandomItems } from "$lib/utils/randomHelpers.js";
+import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
+import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
+  import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
 
   let numQuestions = 10;
   let file = null;
@@ -23,6 +28,8 @@
   let isPdfUpload = false;
   let aiLoading = false;
   let aiError = "";
+  let aiInstructions = "";
+  let useAiGenerator = false;
 
   let questions = [];
   let currentQuestionIndex = 0;
@@ -47,6 +54,16 @@
     blue: "⚽️ Goal for Team Blue!"
   };
 
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  let showTimer = false;
+  let timer = 10;
+  let timerInterval;
+
   let showPopup = false;
   let popupMessage = "";
   let goalResetTimeout;
@@ -56,6 +73,9 @@
   let savingSet = false;
   let saveStatus = "";
   let saveError = "";
+let winnerPopupVisible = false;
+let winnerName = "";
+let winnerSubtitle = "";
 
   function goBack() {
     goto("/start");
@@ -84,6 +104,7 @@
   }
 
   function moveBall(team) {
+    stopTimer();
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
       if (ballPosition === -maxBallPosition) {
@@ -99,10 +120,21 @@
   }
 
   function wrongAnswer() {
-    nextQuestion();
+    if (showTimer) return;
+    showTimer = true;
+    timer = 10;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timer -= 1;
+      if (timer <= 0) {
+        stopTimer();
+        nextQuestion();
+      }
+    }, 1000);
   }
 
   function skipQuestion() {
+    stopTimer();
     questions = questions.filter((_, index) => index !== currentQuestionIndex);
     if (questions.length === 0) {
       endGame();
@@ -114,8 +146,10 @@
   }
 
   function nextQuestion() {
-    currentQuestionIndex += 1;
-    if (currentQuestionIndex >= questions.length) {
+    stopTimer();
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex += 1;
+    } else {
       endGame();
     }
   }
@@ -125,6 +159,18 @@
     gameOver = true;
     clearTimeout(goalResetTimeout);
     showPopup = false;
+    if (redScore > blueScore) {
+      winnerName = redTeamLabel;
+      winnerSubtitle = `Final score ${redScore} : ${blueScore}`;
+    } else if (blueScore > redScore) {
+      winnerName = blueTeamLabel;
+      winnerSubtitle = `Final score ${blueScore} : ${redScore}`;
+    } else {
+      winnerName = "Draw";
+      winnerSubtitle = "Both teams have the same score.";
+    }
+    winnerPopupVisible = true;
+    stopTimer();
     resetBall();
     popupVariant = "neutral";
   }
@@ -140,10 +186,27 @@
     showPopup = false;
     clearTimeout(goalResetTimeout);
     popupVariant = "neutral";
+    stopTimer();
+    winnerPopupVisible = false;
+  }
+
+  function startGameWith(list) {
+    questions = list;
+    currentQuestionIndex = 0;
+    redScore = 0;
+    blueScore = 0;
+    resetBall();
+    showPopup = false;
+    gameStarted = true;
+    gameOver = false;
+    saveStatus = "";
+    saveError = "";
+    stopTimer();
   }
 
   async function handleFileUpload(event) {
-    file = event.target.files?.[0] ?? null;
+    const fileList = event?.detail?.files ?? event?.target?.files;
+    file = fileList?.[0] ?? null;
     fileError = "";
     aiError = "";
     materialText = "";
@@ -201,6 +264,67 @@
     "Translate into English: spielen"
   ];
 
+  function buildEnglishAiMaterial(customLines) {
+    if (customLines.length > 0) {
+      return `User provided prompts or vocabulary:\n${customLines.join("\n")}`;
+    }
+    return [
+      `Create ${numQuestions} short vocabulary or grammar questions.`,
+      "Niveau: Volksschule / lower secondary.",
+      "Mische Wortschatz, Satzbau und Grammatik."
+    ].join("\n");
+  }
+
+  async function generateQuestionsWithAiSettings() {
+    const customLines =
+      useManualInput && manualLines.length > 0 ? manualLines : uploadedLines;
+    const material = buildEnglishAiMaterial(customLines);
+    aiLoading = true;
+    aiError = "";
+
+    try {
+      const instructions = [
+        "Create concise English vocabulary or grammar questions and provide only the prompt without solutions.",
+        aiInstructions.trim()
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const list = await requestAiQuestions({
+        subject: "english",
+        material,
+        instructions,
+        fileName: file?.name,
+        numQuestions
+      });
+      const mapped = list.map((entry, index) => ({
+        id: index + 1,
+        question: cleanQuestionText(entry.question)
+      }));
+      startGameWith(mapped);
+      return true;
+    } catch (error) {
+      aiError = error.message || "AI could not create questions.";
+      return false;
+    } finally {
+      aiLoading = false;
+    }
+  }
+
+  function startGameWith(list) {
+    questions = list;
+    currentQuestionIndex = 0;
+    redScore = 0;
+    blueScore = 0;
+    resetBall();
+    showPopup = false;
+    gameStarted = true;
+    gameOver = false;
+    saveStatus = "";
+    saveError = "";
+    winnerPopupVisible = false;
+    scrollToTop();
+  }
+
   async function generateQuestionsFromPdf() {
     if (!materialText.trim()) {
       aiError = "The PDF seems to be empty.";
@@ -224,40 +348,20 @@
     aiError = "";
 
     try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: "english",
-          material: snippet,
-          instructions:
-            "Create concise English vocabulary or grammar questions based strictly on the provided teaching material.",
-          fileName: file?.name,
-          numQuestions
-        })
+      const list = await requestAiQuestions({
+        subject: "english",
+        material: snippet,
+        instructions:
+          "Create concise English vocabulary or grammar questions based strictly on the provided teaching material.",
+        fileName: file?.name,
+        numQuestions
       });
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        throw new Error(json.error || "AI could not create questions.");
-      }
 
-      const list = json.questions ?? [];
-      if (!list.length) throw new Error("No questions were returned.");
-
-      questions = list.map((entry, index) => ({
+      const mapped = list.map((entry, index) => ({
         id: index + 1,
         question: cleanQuestionText(entry.question)
       }));
-
-      currentQuestionIndex = 0;
-      redScore = 0;
-      blueScore = 0;
-      resetBall();
-      showPopup = false;
-      gameStarted = true;
-      gameOver = false;
-      saveStatus = "";
-      saveError = "";
+      startGameWith(mapped);
       return true;
     } catch (error) {
       aiError = error.message || "Unknown error while contacting AI.";
@@ -276,17 +380,20 @@
       return;
     }
 
+    if (useAiGenerator) {
+      const ok = await generateQuestionsWithAiSettings();
+      if (ok) return;
+    }
+
     const generated = [];
     const customLines =
       useManualInput && manualLines.length > 0 ? manualLines : uploadedLines;
-    const hasCustom = customLines.length > 0;
 
-    for (let i = 0; i < numQuestions; i += 1) {
-      if (hasCustom) {
-        const line =
-          customLines[Math.floor(Math.random() * customLines.length)];
-        generated.push(buildQuestionFromLine(line));
-      } else {
+    if (customLines.length > 0) {
+      const uniqueLines = pickUniqueRandomItems(customLines, numQuestions);
+      uniqueLines.forEach((line) => generated.push(buildQuestionFromLine(line)));
+    } else {
+      for (let i = 0; i < numQuestions; i += 1) {
         generated.push(
           fallbackQuestions[
             Math.floor(Math.random() * fallbackQuestions.length)
@@ -295,20 +402,12 @@
       }
     }
 
-    questions = generated.map((text, index) => ({
+    const mapped = generated.map((text, index) => ({
       id: index + 1,
       question: cleanQuestionText(text)
     }));
 
-    currentQuestionIndex = 0;
-    redScore = 0;
-    blueScore = 0;
-    resetBall();
-    showPopup = false;
-    gameStarted = true;
-    gameOver = false;
-    saveStatus = "";
-    saveError = "";
+    startGameWith(mapped);
   }
 
   async function saveCurrentQuestions() {
@@ -338,7 +437,17 @@
 
   onDestroy(() => {
     clearTimeout(goalResetTimeout);
+    stopTimer();
   });
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    showTimer = false;
+    timer = 10;
+  }
 </script>
 
 {#if !gameStarted && !gameOver}
@@ -353,18 +462,19 @@
   >
     <div class="extra-settings">
       <div class="file-row">
-        <label>
-          Lesson content (TXT or PDF, optional)
-          <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
-        </label>
-        {#if file}
-          <p class="file-info">📄 {file.name} loaded</p>
-        {/if}
+        <FileDropzone
+          label="Lesson content (TXT or PDF, optional)"
+          accept=".txt,.pdf"
+          on:change={handleFileUpload}
+          fileName={file?.name}
+          loading={aiLoading}
+          description="Drag the file here or tap to choose."
+        />
         {#if fileError}
           <p class="file-error">{fileError}</p>
         {/if}
         {#if aiLoading}
-          <p class="file-info">🤖 AI is reading the document …</p>
+          <p class="file-info">🤖 AI is creating questions …</p>
         {/if}
         {#if aiError}
           <p class="file-error">{aiError}</p>
@@ -384,6 +494,19 @@
           on:input={processManualInput}
         ></textarea>
       {/if}
+
+      <label class="toggle">
+        <input type="checkbox" bind:checked={useAiGenerator} />
+        <span>Let AI create the questions</span>
+      </label>
+
+      {#if useAiGenerator}
+        <textarea
+          rows="3"
+          placeholder="Optional instructions for the AI"
+          bind:value={aiInstructions}
+        ></textarea>
+      {/if}
     </div>
   </SetupScreen>
 {/if}
@@ -398,6 +521,8 @@
     {questions}
     {ballPosition}
     {maxBallPosition}
+    {showTimer}
+    {timer}
     {wrongLabel}
     {skipLabel}
     {endLabel}
@@ -421,36 +546,24 @@
 
 <GoalPopup message={popupMessage} visible={showPopup} variant={popupVariant} />
 
-{#if questions.length > 0}
-  <section class="set-save-panel">
-    <div>
-      <h3>Save this question set</h3>
-      <p>Provide a title to reuse the set later via /sets.</p>
-    </div>
-    <div class="save-actions">
-      <input
-        type="text"
-        placeholder="Set title"
-        bind:value={saveTitle}
-        aria-label="Set title"
-      />
-      <button
-        class="btn-primary"
-        type="button"
-        on:click={saveCurrentQuestions}
-        disabled={savingSet}
-      >
-        {savingSet ? "Saving…" : "Save set"}
-      </button>
-    </div>
-    {#if saveStatus}
-      <p class="save-status">{saveStatus}</p>
-    {/if}
-    {#if saveError}
-      <p class="file-error">{saveError}</p>
-    {/if}
-  </section>
-{/if}
+<WinnerPopup
+  visible={winnerPopupVisible}
+  winner={winnerName}
+  subtitle={winnerSubtitle}
+  on:close={() => (winnerPopupVisible = false)}
+/>
+
+<SaveSetPanel
+  visible={questions.length > 0}
+  title="Save this question set"
+  description="Provide a title to reuse the set later via /sets."
+  bind:saveTitle
+  saving={savingSet}
+  status={saveStatus}
+  error={saveError}
+  buttonLabel="Save set"
+  on:save={saveCurrentQuestions}
+/>
 
 <style>
   .extra-settings {
@@ -499,37 +612,4 @@
     resize: vertical;
   }
 
-  .set-save-panel {
-    max-width: 960px;
-    margin: 24px auto 80px;
-    padding: 20px;
-    border-radius: 24px;
-    border: 2px solid #cbd5f5;
-    background: #fff;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .save-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .save-actions input {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .save-status {
-    margin: 0;
-    color: #16a34a;
-    font-weight: 600;
-  }
 </style>

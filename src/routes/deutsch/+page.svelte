@@ -11,6 +11,11 @@
   } from "$lib/utils/materialParser";
   import { cleanQuestionText } from "$lib/utils/questionFormatter";
   import { saveQuestionSet } from "$lib/utils/setStorage.js";
+  import { requestAiQuestions } from "$lib/utils/aiQuestionGenerator.js";
+  import { pickUniqueRandomItems } from "$lib/utils/randomHelpers.js";
+import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
+import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
+import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
 
   let numQuestions = 10;
   let file = null;
@@ -22,6 +27,8 @@
   let isPdfUpload = false;
   let aiLoading = false;
   let aiError = "";
+  let aiInstructions = "";
+  let useAiGenerator = false;
 
   let questions = [];
   let gameStarted = false;
@@ -102,10 +109,19 @@
   let savingSet = false;
   let saveStatus = "";
   let saveError = "";
+  let winnerPopupVisible = false;
+  let winnerName = "";
+  let winnerSubtitle = "";
 
   const wrongLabel = "Falsch";
   const skipLabel = "Überspringen";
   const endLabel = "Spiel beenden";
+
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
 
   function showMessage(msg, variant = "neutral") {
     popupMessage = msg;
@@ -118,7 +134,8 @@
   }
 
   async function handleFileUpload(event) {
-    file = event.target.files?.[0] ?? null;
+    const fileList = event?.detail?.files ?? event?.target?.files;
+    file = fileList?.[0] ?? null;
     fileError = "";
     aiError = "";
     materialText = "";
@@ -157,11 +174,8 @@
     const pool = [];
 
     if ((file || useManualInput) && customTasks.length > 0) {
-      for (let i = 0; i < numQuestions; i += 1) {
-        pool.push(
-          customTasks[Math.floor(Math.random() * customTasks.length)]
-        );
-      }
+      const uniqueTasks = pickUniqueRandomItems(customTasks, numQuestions);
+      pool.push(...uniqueTasks);
     } else if (taskTypes.syllables) {
       for (let i = 0; i < numQuestions; i += 1) {
         const word =
@@ -196,6 +210,78 @@
     }));
   }
 
+  function startGameWith(list) {
+    questions = list;
+    gameStarted = true;
+    gameOver = false;
+    currentQuestionIndex = 0;
+    ballPosition = 0;
+    redScore = 0;
+    blueScore = 0;
+    showPopup = false;
+    stopTimer();
+    saveStatus = "";
+    saveError = "";
+    winnerPopupVisible = false;
+    scrollToTop();
+  }
+
+  function buildGermanAiMaterial() {
+    if ((file || useManualInput) && customTasks.length > 0) {
+      return `Eigene Aufgaben oder Textstellen:\n${customTasks.join("\n")}`;
+    }
+
+    const selectedCategories = [];
+    if (taskTypes.syllables) selectedCategories.push("Silben bestimmen");
+    if (taskTypes.capitalization)
+      selectedCategories.push("Groß- und Kleinschreibung");
+    if (taskTypes.articles) selectedCategories.push("Artikel bestimmen");
+
+    const lines = [`Es werden ${numQuestions} Fragen benötigt.`];
+    if (selectedCategories.length > 0) {
+      lines.push(`Fokus: ${selectedCategories.join(", ")}`);
+    } else {
+      lines.push("Allgemeine Aufgaben zu Grammatik, Rechtschreibung und Sprache.");
+    }
+    return lines.join("\n");
+  }
+
+  async function generateQuestionsWithAiSettings() {
+    const material = buildGermanAiMaterial();
+    aiLoading = true;
+    aiError = "";
+
+    try {
+      const instructions = [
+        "Erstelle abwechslungsreiche Deutsch-Aufgaben auf Grundschulniveau. Stelle klare Fragen und gib nur die Aufgabenstellung ohne Lösung aus.",
+        aiInstructions.trim()
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      const list = await requestAiQuestions({
+        subject: "deutsch",
+        material,
+        instructions,
+        fileName: file?.name,
+        numQuestions
+      });
+
+      const mapped = list.map((entry, index) => ({
+        id: index + 1,
+        question: cleanQuestionText(entry.question),
+        hint: entry.hint ?? null
+      }));
+      startGameWith(mapped);
+      return true;
+    } catch (error) {
+      aiError = error.message || "Die KI konnte keine Fragen generieren.";
+      return false;
+    } finally {
+      aiLoading = false;
+    }
+  }
+
   async function generateQuestionsFromPdf() {
     if (!materialText.trim()) {
       aiError = "Das PDF konnte nicht gelesen werden.";
@@ -220,45 +306,21 @@
     aiError = "";
 
     try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: "deutsch",
-          material: snippet,
-          instructions:
-            "Erstelle abwechslungsreiche Fragen zum deutschen Unterrichtsstoff. Nutze zentrale Begriffe, Grammatik oder Textverständnis und halte die Fragen kurz.",
-          fileName: file?.name,
-          numQuestions
-        })
+      const list = await requestAiQuestions({
+        subject: "deutsch",
+        material: snippet,
+        instructions:
+          "Erstelle abwechslungsreiche Fragen zum deutschen Unterrichtsstoff. Nutze zentrale Begriffe, Grammatik oder Textverständnis und halte die Fragen kurz.",
+        fileName: file?.name,
+        numQuestions
       });
 
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        throw new Error(json.error || "Die KI konnte keine Fragen generieren.");
-      }
-
-      const list = json.questions ?? [];
-      if (!list.length) {
-        throw new Error("Die KI hat keine Fragen geliefert.");
-      }
-
-      questions = list.map((entry, index) => ({
+      const mapped = list.map((entry, index) => ({
         id: index + 1,
         question: cleanQuestionText(entry.question),
         hint: entry.hint ?? null
       }));
-
-      gameStarted = true;
-      gameOver = false;
-      currentQuestionIndex = 0;
-      ballPosition = 0;
-      redScore = 0;
-      blueScore = 0;
-      showPopup = false;
-      stopTimer();
-      saveStatus = "";
-      saveError = "";
+      startGameWith(mapped);
       return true;
     } catch (error) {
       aiError = error.message || "Unbekannter Fehler bei der KI.";
@@ -280,17 +342,15 @@
       return;
     }
 
-    questions = buildQuestionPool();
-    gameStarted = true;
-    gameOver = false;
-    currentQuestionIndex = 0;
-    ballPosition = 0;
-    redScore = 0;
-    blueScore = 0;
-    showPopup = false;
-    stopTimer();
-    saveStatus = "";
-    saveError = "";
+    if (useAiGenerator) {
+      const ok = await generateQuestionsWithAiSettings();
+      if (ok) {
+        return;
+      }
+    }
+
+    const pool = buildQuestionPool();
+    startGameWith(pool);
   }
 
   function moveBall(team) {
@@ -347,9 +407,20 @@
   function endGame() {
     gameStarted = false;
     gameOver = true;
-    if (redScore > blueScore) showMessage("🏆 Team Rot gewinnt!");
-    else if (blueScore > redScore) showMessage("🏆 Team Blau gewinnt!");
-    else showMessage("🤝 Unentschieden!");
+    if (redScore > blueScore) {
+      showMessage("🏆 Team Rot gewinnt!");
+      winnerName = redTeamLabel;
+      winnerSubtitle = `Endstand ${redScore} : ${blueScore}`;
+    } else if (blueScore > redScore) {
+      showMessage("🏆 Team Blau gewinnt!");
+      winnerName = blueTeamLabel;
+      winnerSubtitle = `Endstand ${blueScore} : ${redScore}`;
+    } else {
+      showMessage("🤝 Unentschieden!");
+      winnerName = "Unentschieden";
+      winnerSubtitle = "Beide Teams sind gleich stark.";
+    }
+    winnerPopupVisible = true;
     resetField();
   }
 
@@ -363,6 +434,7 @@
     resetField();
     showPopup = false;
     popupVariant = "neutral";
+    winnerPopupVisible = false;
   }
 
   function goBack() {
@@ -439,18 +511,18 @@
         </label>
       </div>
 
-      <label class="file-label">
-        Unterrichtsstoff (TXT oder PDF, optional)
-        <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
-      </label>
-      {#if file}
-        <p class="file-info">📄 Datei geladen: {file.name}</p>
-      {/if}
+      <FileDropzone
+        label="Unterrichtsstoff (TXT oder PDF, optional)"
+        accept=".txt,.pdf"
+        on:change={handleFileUpload}
+        fileName={file?.name}
+        loading={aiLoading}
+      />
       {#if fileError}
         <p class="file-error">{fileError}</p>
       {/if}
       {#if aiLoading}
-        <p class="file-info">🤖 KI analysiert das Dokument …</p>
+        <p class="file-info">🤖 KI erstellt Fragen …</p>
       {/if}
       {#if aiError}
         <p class="file-error">{aiError}</p>
@@ -467,6 +539,19 @@
           placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
           bind:value={manualInput}
           on:input={processManualInput}
+        ></textarea>
+      {/if}
+
+      <label class="toggle">
+        <input type="checkbox" bind:checked={useAiGenerator} />
+        KI-Fragen anhand der Auswahl erzeugen
+      </label>
+
+      {#if useAiGenerator}
+        <textarea
+          rows="3"
+          placeholder="Zusatzhinweise an die KI (optional)"
+          bind:value={aiInstructions}
         ></textarea>
       {/if}
     </div>
@@ -508,36 +593,22 @@
 
 <GoalPopup message={popupMessage} visible={showPopup} variant={popupVariant} />
 
-{#if questions.length > 0}
-  <section class="set-save-panel">
-    <div>
-      <h3>Fragen-Set speichern</h3>
-      <p>Lege einen Titel fest und sichere das aktuelle Set für später.</p>
-    </div>
-    <div class="save-actions">
-      <input
-        type="text"
-        placeholder="Titel des Sets"
-        bind:value={saveTitle}
-        aria-label="Titel des Fragen-Sets"
-      />
-      <button
-        class="btn-primary"
-        type="button"
-        on:click={saveCurrentQuestions}
-        disabled={savingSet}
-      >
-        {savingSet ? "Speichere …" : "Set speichern"}
-      </button>
-    </div>
-    {#if saveStatus}
-      <p class="save-status">{saveStatus}</p>
-    {/if}
-    {#if saveError}
-      <p class="file-error">{saveError}</p>
-    {/if}
-  </section>
-{/if}
+<WinnerPopup
+  visible={winnerPopupVisible}
+  winner={winnerName}
+  subtitle={winnerSubtitle}
+  on:close={() => (winnerPopupVisible = false)}
+/>
+
+<SaveSetPanel
+  visible={questions.length > 0}
+  description="Lege einen Titel fest und sichere das aktuelle Set für später."
+  bind:saveTitle
+  saving={savingSet}
+  status={saveStatus}
+  error={saveError}
+  on:save={saveCurrentQuestions}
+/>
 
 <style>
   .extra-settings {
@@ -578,39 +649,6 @@
     font-size: 0.9rem;
   }
 
-  .set-save-panel {
-    max-width: 960px;
-    margin: 24px auto 80px;
-    padding: 20px;
-    border-radius: 24px;
-    border: 2px solid #cbd5f5;
-    background: #fff;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .save-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .save-actions input {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .save-status {
-    margin: 0;
-    color: #16a34a;
-    font-weight: 600;
-  }
 
   .toggle {
     display: flex;

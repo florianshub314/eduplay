@@ -11,6 +11,11 @@
   } from "$lib/utils/materialParser";
   import { cleanQuestionText } from "$lib/utils/questionFormatter";
   import { saveQuestionSet } from "$lib/utils/setStorage.js";
+  import { requestAiQuestions } from "$lib/utils/aiQuestionGenerator.js";
+  import { pickUniqueRandomItems } from "$lib/utils/randomHelpers.js";
+import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
+import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
+import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
 
   let numQuestions = 10;
   let file = null;
@@ -23,6 +28,8 @@
   let isPdfUpload = false;
   let aiLoading = false;
   let aiError = "";
+  let aiInstructions = "";
+  let useAiGenerator = false;
 
   let questions = [];
   let currentQuestionIndex = 0;
@@ -47,6 +54,16 @@
     blue: "⚽️ But pour l'équipe bleue !"
   };
 
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  let showTimer = false;
+  let timer = 10;
+  let timerInterval;
+
   let showPopup = false;
   let popupMessage = "";
   let goalResetTimeout;
@@ -56,6 +73,9 @@
   let savingSet = false;
   let saveStatus = "";
   let saveError = "";
+  let winnerPopupVisible = false;
+  let winnerName = "";
+  let winnerSubtitle = "";
 
   function goBack() {
     goto("/start");
@@ -84,6 +104,7 @@
   }
 
   function moveBall(team) {
+    stopTimer();
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
       if (ballPosition === -maxBallPosition) {
@@ -99,10 +120,21 @@
   }
 
   function wrongAnswer() {
-    nextQuestion();
+    if (showTimer) return;
+    showTimer = true;
+    timer = 10;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timer -= 1;
+      if (timer <= 0) {
+        stopTimer();
+        nextQuestion();
+      }
+    }, 1000);
   }
 
   function skipQuestion() {
+    stopTimer();
     questions = questions.filter((_, index) => index !== currentQuestionIndex);
     if (questions.length === 0) {
       endGame();
@@ -114,8 +146,10 @@
   }
 
   function nextQuestion() {
-    currentQuestionIndex += 1;
-    if (currentQuestionIndex >= questions.length) {
+    stopTimer();
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex += 1;
+    } else {
       endGame();
     }
   }
@@ -125,6 +159,18 @@
     gameOver = true;
     clearTimeout(goalResetTimeout);
     showPopup = false;
+    if (redScore > blueScore) {
+      winnerName = redTeamLabel;
+      winnerSubtitle = `Score final ${redScore} : ${blueScore}`;
+    } else if (blueScore > redScore) {
+      winnerName = blueTeamLabel;
+      winnerSubtitle = `Score final ${blueScore} : ${redScore}`;
+    } else {
+      winnerName = "Égalité";
+      winnerSubtitle = "Les deux équipes ont le même score.";
+    }
+    winnerPopupVisible = true;
+    stopTimer();
     resetBall();
     popupVariant = "neutral";
   }
@@ -140,10 +186,29 @@
     showPopup = false;
     clearTimeout(goalResetTimeout);
     popupVariant = "neutral";
+    stopTimer();
+    winnerPopupVisible = false;
+  }
+
+  function startGameWith(list) {
+    questions = list;
+    currentQuestionIndex = 0;
+    redScore = 0;
+    blueScore = 0;
+    resetBall();
+    showPopup = false;
+    gameStarted = true;
+    gameOver = false;
+    saveStatus = "";
+    saveError = "";
+    stopTimer();
+    winnerPopupVisible = false;
+    scrollToTop();
   }
 
   async function handleFileUpload(event) {
-    file = event.target.files?.[0] ?? null;
+    const fileList = event?.detail?.files ?? event?.target?.files;
+    file = fileList?.[0] ?? null;
     fileError = "";
     aiError = "";
     materialText = "";
@@ -201,6 +266,54 @@
     "Traduisez en français : glücklich"
   ];
 
+  function buildFrenchAiMaterial(customLines) {
+    if (customLines.length > 0) {
+      return `Liste de vocabulaire ou remarques fournies:\n${customLines.join(
+        "\n"
+      )}`;
+    }
+    return [
+      `Produis ${numQuestions} questions courtes en français.`,
+      "Mets l'accent sur le vocabulaire, les phrases simples ou la grammaire.",
+      "Niveau: école primaire / collège."
+    ].join("\n");
+  }
+
+  async function generateQuestionsWithAiSettings() {
+    const customLines =
+      useManualInput && manualLines.length > 0 ? manualLines : uploadedLines;
+    const material = buildFrenchAiMaterial(customLines);
+    aiLoading = true;
+    aiError = "";
+
+    try {
+      const instructions = [
+        "Crée des questions variées de vocabulaire ou grammaire en français et renvoie uniquement l'énoncé.",
+        aiInstructions.trim()
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const list = await requestAiQuestions({
+        subject: "french",
+        material,
+        instructions,
+        fileName: file?.name,
+        numQuestions
+      });
+      const mapped = list.map((entry, index) => ({
+        id: index + 1,
+        question: cleanQuestionText(entry.question)
+      }));
+      startGameWith(mapped);
+      return true;
+    } catch (error) {
+      aiError = error.message || "Impossible de générer des questions.";
+      return false;
+    } finally {
+      aiLoading = false;
+    }
+  }
+
   async function generateQuestionsFromPdf() {
     if (!materialText.trim()) {
       aiError = "Le PDF semble vide.";
@@ -224,40 +337,20 @@
     aiError = "";
 
     try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: "french",
-          material: snippet,
-          instructions:
-            "Crée des questions de vocabulaire ou de compréhension en français sur la base du document fourni.",
-          fileName: file?.name,
-          numQuestions
-        })
+      const list = await requestAiQuestions({
+        subject: "french",
+        material: snippet,
+        instructions:
+          "Crée des questions de vocabulaire ou de compréhension en français sur la base du document fourni.",
+        fileName: file?.name,
+        numQuestions
       });
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        throw new Error(json.error || "Impossible de générer des questions.");
-      }
 
-      const list = json.questions ?? [];
-      if (!list.length) throw new Error("Aucune question renvoyée.");
-
-      questions = list.map((entry, index) => ({
+      const mapped = list.map((entry, index) => ({
         id: index + 1,
         question: cleanQuestionText(entry.question)
       }));
-
-      currentQuestionIndex = 0;
-      redScore = 0;
-      blueScore = 0;
-      resetBall();
-      showPopup = false;
-      gameStarted = true;
-      gameOver = false;
-      saveStatus = "";
-      saveError = "";
+      startGameWith(mapped);
       return true;
     } catch (error) {
       aiError = error.message || "Erreur inconnue lors de l'appel IA.";
@@ -276,17 +369,20 @@
       return;
     }
 
+    if (useAiGenerator) {
+      const ok = await generateQuestionsWithAiSettings();
+      if (ok) return;
+    }
+
     const generated = [];
     const customLines =
       useManualInput && manualLines.length > 0 ? manualLines : uploadedLines;
-    const hasCustom = customLines.length > 0;
 
-    for (let i = 0; i < numQuestions; i += 1) {
-      if (hasCustom) {
-        const line =
-          customLines[Math.floor(Math.random() * customLines.length)];
-        generated.push(buildQuestionFromLine(line));
-      } else {
+    if (customLines.length > 0) {
+      const uniqueLines = pickUniqueRandomItems(customLines, numQuestions);
+      uniqueLines.forEach((line) => generated.push(buildQuestionFromLine(line)));
+    } else {
+      for (let i = 0; i < numQuestions; i += 1) {
         generated.push(
           fallbackQuestions[
             Math.floor(Math.random() * fallbackQuestions.length)
@@ -295,25 +391,27 @@
       }
     }
 
-    questions = generated.map((text, index) => ({
+    const mapped = generated.map((text, index) => ({
       id: index + 1,
       question: cleanQuestionText(text)
     }));
 
-    currentQuestionIndex = 0;
-    redScore = 0;
-    blueScore = 0;
-    resetBall();
-    showPopup = false;
-    gameStarted = true;
-    gameOver = false;
-    saveStatus = "";
-    saveError = "";
+    startGameWith(mapped);
   }
 
   onDestroy(() => {
     clearTimeout(goalResetTimeout);
+    stopTimer();
   });
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    showTimer = false;
+    timer = 10;
+  }
 
   async function saveCurrentQuestions() {
     saveStatus = "";
@@ -353,18 +451,19 @@
   >
     <div class="extra-settings">
       <div class="file-row">
-        <label>
-          Contenu (TXT ou PDF, optionnel)
-          <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
-        </label>
-        {#if file}
-          <p class="file-info">📄 {file.name} importé</p>
-        {/if}
+        <FileDropzone
+          label="Contenu (TXT ou PDF, optionnel)"
+          accept=".txt,.pdf"
+          on:change={handleFileUpload}
+          fileName={file?.name}
+          loading={aiLoading}
+          description="Dépose le fichier ici ou clique pour l'importer."
+        />
         {#if fileError}
           <p class="file-error">{fileError}</p>
         {/if}
         {#if aiLoading}
-          <p class="file-info">🤖 La KI analyse le document …</p>
+          <p class="file-info">🤖 La KI crée des questions …</p>
         {/if}
         {#if aiError}
           <p class="file-error">{aiError}</p>
@@ -384,6 +483,19 @@
           on:input={processManualInput}
         ></textarea>
       {/if}
+
+      <label class="toggle">
+        <input type="checkbox" bind:checked={useAiGenerator} />
+        Laisser la KI créer les questions
+      </label>
+
+      {#if useAiGenerator}
+        <textarea
+          rows="3"
+          placeholder="Consignes supplémentaires pour la KI (optionnel)"
+          bind:value={aiInstructions}
+        ></textarea>
+      {/if}
     </div>
   </SetupScreen>
 {/if}
@@ -398,6 +510,8 @@
     {questions}
     {ballPosition}
     {maxBallPosition}
+    {showTimer}
+    {timer}
     {wrongLabel}
     {skipLabel}
     {endLabel}
@@ -421,36 +535,24 @@
 
 <GoalPopup message={popupMessage} visible={showPopup} variant={popupVariant} />
 
-{#if questions.length > 0}
-  <section class="set-save-panel">
-    <div>
-      <h3>Enregistrer ce set</h3>
-      <p>Donnez un titre pour retrouver le set plus tard sur /sets.</p>
-    </div>
-    <div class="save-actions">
-      <input
-        type="text"
-        placeholder="Titre du set"
-        bind:value={saveTitle}
-        aria-label="Titre du set"
-      />
-      <button
-        class="btn-primary"
-        type="button"
-        on:click={saveCurrentQuestions}
-        disabled={savingSet}
-      >
-        {savingSet ? "Enregistrement…" : "Sauvegarder"}
-      </button>
-    </div>
-    {#if saveStatus}
-      <p class="save-status">{saveStatus}</p>
-    {/if}
-    {#if saveError}
-      <p class="file-error">{saveError}</p>
-    {/if}
-  </section>
-{/if}
+<WinnerPopup
+  visible={winnerPopupVisible}
+  winner={winnerName}
+  subtitle={winnerSubtitle}
+  on:close={() => (winnerPopupVisible = false)}
+/>
+
+<SaveSetPanel
+  visible={questions.length > 0}
+  title="Enregistrer ce set"
+  description="Donnez un titre pour retrouver le set plus tard sur /sets."
+  bind:saveTitle
+  saving={savingSet}
+  status={saveStatus}
+  error={saveError}
+  buttonLabel="Sauvegarder"
+  on:save={saveCurrentQuestions}
+/>
 
 <style>
   .extra-settings {
@@ -494,37 +596,4 @@
     resize: vertical;
   }
 
-  .set-save-panel {
-    max-width: 960px;
-    margin: 24px auto 80px;
-    padding: 20px;
-    border-radius: 24px;
-    border: 2px solid #cbd5f5;
-    background: #fff;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .save-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .save-actions input {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .save-status {
-    margin: 0;
-    color: #16a34a;
-    font-weight: 600;
-  }
 </style>

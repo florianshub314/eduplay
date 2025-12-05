@@ -11,6 +11,10 @@
   } from "$lib/utils/materialParser";
   import { cleanQuestionText } from "$lib/utils/questionFormatter";
   import { saveQuestionSet } from "$lib/utils/setStorage.js";
+  import { pickUniqueRandomItems } from "$lib/utils/randomHelpers.js";
+import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
+import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
+import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
 
   let numQuestions = 10;
   let topic = "";
@@ -49,6 +53,16 @@
     blue: "⚽️ Tor für Team Blau!"
   };
 
+  function scrollToTop() {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  let showTimer = false;
+  let timer = 10;
+  let timerInterval;
+
   let showPopup = false;
   let popupMessage = "";
   let goalResetTimeout;
@@ -58,6 +72,9 @@
   let savingSet = false;
   let saveStatus = "";
   let saveError = "";
+let winnerPopupVisible = false;
+let winnerName = "";
+let winnerSubtitle = "";
 
   const genericTemplates = [
     (t, i) => `Frage ${i + 1} zum Thema ${t}: Erkläre den wichtigsten Begriff.`,
@@ -95,6 +112,7 @@
   }
 
   function moveBall(team) {
+    stopTimer();
     if (team === "red") {
       ballPosition = Math.max(ballPosition - 1, -maxBallPosition);
       if (ballPosition === -maxBallPosition) {
@@ -110,16 +128,29 @@
   }
 
   function wrongAnswer() {
-    nextQuestion();
+    if (showTimer) return;
+    showTimer = true;
+    timer = 10;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timer -= 1;
+      if (timer <= 0) {
+        stopTimer();
+        nextQuestion();
+      }
+    }, 1000);
   }
 
   function skipQuestion() {
+    stopTimer();
     nextQuestion();
   }
 
   function nextQuestion() {
-    currentQuestionIndex += 1;
-    if (currentQuestionIndex >= questions.length) {
+    stopTimer();
+    if (currentQuestionIndex < questions.length - 1) {
+      currentQuestionIndex += 1;
+    } else {
       endGame();
     }
   }
@@ -129,6 +160,18 @@
     gameOver = true;
     clearTimeout(goalResetTimeout);
     showPopup = false;
+    if (redScore > blueScore) {
+      winnerName = redTeamLabel;
+      winnerSubtitle = `Endstand ${redScore} : ${blueScore}`;
+    } else if (blueScore > redScore) {
+      winnerName = blueTeamLabel;
+      winnerSubtitle = `Endstand ${blueScore} : ${redScore}`;
+    } else {
+      winnerName = "Unentschieden";
+      winnerSubtitle = "Beide Teams teilen sich den Sieg.";
+    }
+    winnerPopupVisible = true;
+    stopTimer();
     resetBall();
     popupVariant = "neutral";
   }
@@ -144,10 +187,13 @@
     showPopup = false;
     clearTimeout(goalResetTimeout);
     popupVariant = "neutral";
+    stopTimer();
+    winnerPopupVisible = false;
   }
 
   async function handleFileUpload(event) {
-    file = event.target.files?.[0] ?? null;
+    const fileList = event?.detail?.files ?? event?.target?.files;
+    file = fileList?.[0] ?? null;
     fileError = "";
     aiError = "";
     materialText = "";
@@ -193,14 +239,14 @@
     const customLines = getMaterialLines();
     const hasCustom = customLines.length > 0;
     const trimmedTopic = topic.trim();
-    const list = [];
 
+    if (hasCustom) {
+      return pickUniqueRandomItems(customLines, numQuestions);
+    }
+
+    const list = [];
     for (let i = 0; i < numQuestions; i += 1) {
-      if (hasCustom) {
-        list.push(
-          customLines[Math.floor(Math.random() * customLines.length)]
-        );
-      } else if (trimmedTopic) {
+      if (trimmedTopic) {
         const template =
           genericTemplates[Math.floor(Math.random() * genericTemplates.length)];
         list.push(template(trimmedTopic, i));
@@ -224,6 +270,11 @@
     blueScore = 0;
     resetBall();
     showPopup = false;
+    stopTimer();
+    saveStatus = "";
+    saveError = "";
+    winnerPopupVisible = false;
+    scrollToTop();
   }
 
   async function saveCurrentQuestions() {
@@ -327,7 +378,17 @@
 
   onDestroy(() => {
     clearTimeout(goalResetTimeout);
+    stopTimer();
   });
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+    showTimer = false;
+    timer = 10;
+  }
 </script>
 
 {#if !gameStarted && !gameOver}
@@ -351,13 +412,13 @@
       </label>
 
       <div class="file-row">
-        <label>
-          Unterrichtsmaterial (TXT oder PDF)
-          <input type="file" accept=".txt,.pdf" on:change={handleFileUpload} />
-        </label>
-        {#if file}
-          <p class="file-info">📄 Datei geladen: {file.name}</p>
-        {/if}
+        <FileDropzone
+          label="Unterrichtsmaterial (TXT oder PDF)"
+          accept=".txt,.pdf"
+          on:change={handleFileUpload}
+          fileName={file?.name}
+          loading={aiLoading}
+        />
         {#if fileError}
           <p class="file-error">{fileError}</p>
         {/if}
@@ -423,6 +484,8 @@
     {questions}
     {ballPosition}
     {maxBallPosition}
+    {showTimer}
+    {timer}
     {wrongLabel}
     {skipLabel}
     {endLabel}
@@ -446,36 +509,22 @@
 
 <GoalPopup message={popupMessage} visible={showPopup} variant={popupVariant} />
 
-{#if questions.length > 0}
-  <section class="set-save-panel">
-    <div>
-      <h3>Fragen-Set speichern</h3>
-      <p>Vergib einen Titel und sichere dieses Set für spätere Spiele.</p>
-    </div>
-    <div class="save-actions">
-      <input
-        type="text"
-        placeholder="Titel des Sets"
-        bind:value={saveTitle}
-        aria-label="Titel des Sets"
-      />
-      <button
-        class="btn-primary"
-        type="button"
-        on:click={saveCurrentQuestions}
-        disabled={savingSet}
-      >
-        {savingSet ? "Speichere …" : "Set speichern"}
-      </button>
-    </div>
-    {#if saveStatus}
-      <p class="save-status">{saveStatus}</p>
-    {/if}
-    {#if saveError}
-      <p class="file-error">{saveError}</p>
-    {/if}
-  </section>
-{/if}
+<WinnerPopup
+  visible={winnerPopupVisible}
+  winner={winnerName}
+  subtitle={winnerSubtitle}
+  on:close={() => (winnerPopupVisible = false)}
+/>
+
+<SaveSetPanel
+  visible={questions.length > 0}
+  description="Vergib einen Titel und sichere dieses Set für spätere Spiele."
+  bind:saveTitle
+  saving={savingSet}
+  status={saveStatus}
+  error={saveError}
+  on:save={saveCurrentQuestions}
+/>
 
 <style>
   .extra-settings {
@@ -566,37 +615,4 @@
     font-weight: 500;
   }
 
-  .set-save-panel {
-    max-width: 960px;
-    margin: 24px auto 80px;
-    padding: 20px;
-    border-radius: 24px;
-    border: 2px solid #cbd5f5;
-    background: #fff;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .save-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .save-actions input {
-    flex: 1;
-    min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .save-status {
-    margin: 0;
-    color: #16a34a;
-    font-weight: 600;
-  }
 </style>

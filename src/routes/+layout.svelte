@@ -43,9 +43,13 @@ const hideNavRoutes = new Set(["/login", "/"]);
     goto("/login");
   }
 
-  async function handleSessionButtonClick() {
+  function openProfile() {
+    goto("/profil");
+  }
+
+  function handleSessionButtonClick() {
     if (session?.user) {
-      await supabase.auth.signOut();
+      openProfile();
     } else {
       openLogin();
     }
@@ -61,14 +65,14 @@ const hideNavRoutes = new Set(["/login", "/"]);
       type="button"
       class="session-button"
       on:click={handleSessionButtonClick}
-      title={session?.user ? "Abmelden" : "Anmelden"}
-      aria-label={session?.user ? "Abmelden" : "Anmelden"}
+      title={session?.user ? "Profil öffnen" : "Anmelden"}
+      aria-label={session?.user ? "Profil öffnen" : "Anmelden"}
     >
       <span class="avatar">👤</span>
       <span class="session-text">
         {#if userDisplay}
           <span>{userDisplay}</span>
-          <span class="session-action">Abmelden</span>
+          <span class="session-action">Profil</span>
         {:else}
           <span>Nicht angemeldet</span>
           <span class="session-action">Anmelden</span>
