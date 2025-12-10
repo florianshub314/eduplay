@@ -630,13 +630,6 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     font-weight: 500;
   }
 
-  .file-label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-weight: 500;
-  }
-
   .file-info {
     margin: 0;
     color: #475569;

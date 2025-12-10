@@ -85,10 +85,10 @@
   }
 
   /* Buttons – gleiche Farbe für Zurück / Falsch / Skip / Spiel beenden */
-  .btn,
-  .btn-primary,
-  .btn-secondary,
-  .btn-danger {
+  :global(.btn),
+  :global(.btn-primary),
+  :global(.btn-secondary),
+  :global(.btn-danger) {
     border: none;
     border-radius: 999px;
     padding: 0.75rem 1.4rem;
@@ -96,29 +96,29 @@
     cursor: pointer;
   }
 
-  .btn-primary {
+  :global(.btn-primary) {
     background: #2563eb;
     color: white;
   }
 
-  .btn-secondary,
-  .btn {
+  :global(.btn-secondary),
+  :global(.btn) {
     background: #4b5563;
     color: white;
   }
 
-  .btn-danger {
+  :global(.btn-danger) {
     background: #b91c1c;
     color: white;
   }
 
-  .btn-block {
+  :global(.btn-block) {
     display: block;
     width: 100%;
     text-align: center;
   }
 
-  .card {
+  :global(.card) {
     background: #020617;
     border-radius: 1rem;
     padding: 1.5rem;
@@ -126,21 +126,21 @@
     margin-bottom: 1.5rem;
   }
 
-  .field {
+  :global(.field) {
     margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
   }
 
-  .field label {
+  :global(.field label) {
     font-size: 0.9rem;
     color: #9ca3af;
   }
 
-  .field input,
-  .field select,
-  .field textarea {
+  :global(.field input),
+  :global(.field select),
+  :global(.field textarea) {
     padding: 0.6rem 0.8rem;
     border-radius: 0.6rem;
     border: 1px solid #374151;
@@ -148,9 +148,9 @@
     color: #e5e7eb;
   }
 
-  .field input:focus,
-  .field select:focus,
-  .field textarea:focus {
+  :global(.field input:focus),
+  :global(.field select:focus),
+  :global(.field textarea:focus) {
     outline: none;
     border-color: #2563eb;
   }

@@ -133,11 +133,16 @@
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
-    <label>E-Mail</label>
-    <input type="email" bind:value={email} required />
+    <label for="email-input">E-Mail</label>
+    <input id="email-input" type="email" bind:value={email} required />
 
-    <label>Passwort</label>
-    <input type="password" bind:value={password} required />
+    <label for="password-input">Passwort</label>
+    <input
+      id="password-input"
+      type="password"
+      bind:value={password}
+      required
+    />
 
     <button class="btn-primary" disabled={loading}>
       {#if loading}

@@ -190,20 +190,6 @@ let winnerSubtitle = "";
     winnerPopupVisible = false;
   }
 
-  function startGameWith(list) {
-    questions = list;
-    currentQuestionIndex = 0;
-    redScore = 0;
-    blueScore = 0;
-    resetBall();
-    showPopup = false;
-    gameStarted = true;
-    gameOver = false;
-    saveStatus = "";
-    saveError = "";
-    stopTimer();
-  }
-
   async function handleFileUpload(event) {
     const fileList = event?.detail?.files ?? event?.target?.files;
     file = fileList?.[0] ?? null;
@@ -322,6 +308,7 @@ let winnerSubtitle = "";
     saveStatus = "";
     saveError = "";
     winnerPopupVisible = false;
+    stopTimer();
     scrollToTop();
   }
 
@@ -576,10 +563,6 @@ let winnerSubtitle = "";
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
-
-  .file-row input[type="file"] {
-    margin-top: 6px;
   }
 
   .file-info {

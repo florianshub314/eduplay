@@ -594,8 +594,11 @@ let winnerSubtitle = "";
         </p>
       {/if}
 
-      <label class="group-label">Zusatzwünsche an die KI (optional)</label>
+      <label class="group-label" for="math-ai-instructions">
+        Zusatzwünsche an die KI (optional)
+      </label>
       <textarea
+        id="math-ai-instructions"
         rows="3"
         placeholder="z. B. leichte Sachaufgaben, Fokus auf Division ..."
         bind:value={aiInstructions}
@@ -740,13 +743,6 @@ let winnerSubtitle = "";
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-
-  .file-label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-weight: 500;
   }
 
   .file-info {

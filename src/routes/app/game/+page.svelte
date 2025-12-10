@@ -107,7 +107,11 @@
     <!-- Frage -->
     <div class="card">
       {#if questions[current].type === "syllables_image"}
-        <img src={questions[current].imageUrl} style="max-width:200px;" />
+        <img
+          src={questions[current].imageUrl}
+          alt="Illustration zur Silbenfrage"
+          style="max-width:200px;"
+        />
         <p>Wie viele Silben?</p>
         <button class="btn-secondary" on:click={() => next()}>1</button>
         <button class="btn-secondary" on:click={() => next()}>2</button>

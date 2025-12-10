@@ -162,8 +162,9 @@
     </p>
 
     <div class="field">
-      <label>Titel des Sets</label>
+      <label for="set-title-input">Titel des Sets</label>
       <input
+        id="set-title-input"
         bind:value={newTitle}
         placeholder="z. B. Kopfrechnen 1x1"
       />
@@ -171,8 +172,9 @@
 
     {#if subject === "english" || subject === "french" || subject === "other"}
       <div class="field">
-        <label>Thema oder Hinweis für die KI</label>
+        <label for="set-topic-textarea">Thema oder Hinweis für die KI</label>
         <textarea
+          id="set-topic-textarea"
           bind:value={topic}
           rows="3"
           placeholder="Beschreibe kurz, welche Inhalte gefragt werden sollen."
