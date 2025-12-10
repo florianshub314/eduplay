@@ -2,6 +2,7 @@
   import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
 
+  const explicitRedirectUrl = import.meta.env.VITE_PUBLIC_SITE_URL;
   let email = "";
   let password = "";
   let isLogin = true;
@@ -42,7 +43,7 @@
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/start`
+          redirectTo: `${explicitRedirectUrl || window.location.origin}/start`
         }
       });
       if (err) throw err;
