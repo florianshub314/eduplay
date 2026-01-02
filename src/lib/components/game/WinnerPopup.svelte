@@ -35,7 +35,7 @@
   .winner-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(15, 23, 42, 0.48);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -44,16 +44,17 @@
   }
 
   .podium-card {
-    background: white;
+    background: linear-gradient(135deg, #ffffff, #e0f2fe 55%, #fef3c7);
     border-radius: 28px;
-    padding: 30px;
+    padding: 32px;
     max-width: 460px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.2);
+    box-shadow: 16px 16px 0 rgba(15, 23, 42, 0.26);
     display: flex;
     flex-direction: column;
     gap: 14px;
+    border: 4px solid #0f172a;
   }
 
   .eyebrow {
@@ -61,17 +62,20 @@
     text-transform: uppercase;
     letter-spacing: 0.25em;
     font-size: 0.65rem;
-    color: #a5b4fc;
+    color: #0f172a;
   }
 
   h3 {
     margin: 0;
-    font-size: 2rem;
+    font-size: 2.2rem;
+    letter-spacing: -0.01em;
+    color: #0f172a;
   }
 
   .subtitle {
     margin: 0;
-    color: #475569;
+    color: #0f172a;
+    opacity: 0.7;
   }
 
   .podium {
@@ -80,38 +84,40 @@
   }
 
   .pillar {
-    width: 140px;
-    height: 160px;
-    border-radius: 30px 30px 12px 12px;
-    background: linear-gradient(180deg, #fde68a, #fbbf24);
+    width: 160px;
+    height: 170px;
+    border-radius: 30px 30px 18px 18px;
+    background: linear-gradient(180deg, #fef08a, #fb923c);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    color: #78350f;
-    box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.12), inset 0 -8px 0 rgba(0, 0, 0, 0.1);
+    border: 4px solid #0f172a;
   }
 
   .place {
-    font-size: 3rem;
-    font-weight: 700;
+    font-size: 3.4rem;
+    font-weight: 900;
     line-height: 1;
   }
 
   .name {
-    font-weight: 600;
+    font-weight: 800;
   }
 
   .btn {
     align-self: center;
-    border-radius: 999px;
-    border: none;
-    padding: 10px 24px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    font-weight: 600;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 12px 26px;
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    color: #0f172a;
+    font-weight: 800;
     cursor: pointer;
-    margin-top: 6px;
+    margin-top: 10px;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.16);
   }
 </style>

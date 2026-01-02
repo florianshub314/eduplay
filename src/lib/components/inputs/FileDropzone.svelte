@@ -79,35 +79,38 @@
 
 <style>
   .dropzone {
-    border: 2px dashed #cbd5f5;
+    border: 3px dashed #0f172a;
     border-radius: 20px;
-    padding: 16px 20px;
+    padding: 18px 22px;
     display: flex;
     gap: 16px;
     align-items: center;
     cursor: pointer;
-    background: rgba(248, 250, 252, 0.9);
-    transition: border-color 0.2s ease, background 0.2s ease;
+    background: #fff;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.12);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   }
 
   .dropzone.dragging {
-    border-color: #6366f1;
-    background: rgba(99, 102, 241, 0.08);
+    border-color: #22c55e;
+    background: #fef3c7;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.14);
   }
 
   .icon {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
   }
 
   .label {
     margin: 0;
-    font-weight: 600;
+    font-weight: 800;
     color: #0f172a;
   }
 
   .description {
     margin: 4px 0 0;
-    color: #475569;
+    color: #0f172a;
+    opacity: 0.7;
     font-size: 0.9rem;
   }
 

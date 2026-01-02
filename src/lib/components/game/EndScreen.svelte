@@ -47,33 +47,35 @@
     max-width: 600px;
     margin: 60px auto;
     text-align: center;
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    font-family: "Baloo 2", "Fredoka", "Nunito", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
+    padding: 28px 22px 36px;
+    background: linear-gradient(135deg, #fef3c7, #dbeafe 55%, #ecfdf3);
+    border: 4px solid #0f172a;
+    border-radius: 32px;
+    box-shadow: 14px 14px 0 rgba(15, 23, 42, 0.18);
   }
 
   .btn-primary,
   .btn-secondary {
-    padding: 12px 20px;
-    border-radius: 999px;
-    border: none;
-    font-weight: 600;
+    padding: 14px 22px;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    font-weight: 800;
     cursor: pointer;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.14);
   }
 
   .btn-primary {
-    background: #2563eb;
-    color: white;
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    color: #0f172a;
   }
 
   .btn-secondary {
-    background: #cbd5f5;
+    background: #fef08a;
     color: #0f172a;
   }
 </style>

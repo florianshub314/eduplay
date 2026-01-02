@@ -20,25 +20,27 @@
     top: calc(env(safe-area-inset-top, 0px) + 92px);
     left: 50%;
     transform: translateX(-50%);
-    padding: 0.85rem 1.75rem;
-    border-radius: 999px;
-    color: #fff;
-    font-weight: 600;
+    padding: 1rem 1.9rem;
+    border-radius: 20px;
+    color: #0f172a;
+    font-weight: 800;
     display: inline-flex;
     align-items: center;
     gap: 0.65rem;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.2);
+    border: 3px solid #0f172a;
     z-index: 1000;
     pointer-events: none;
     animation: drop 220ms ease-out;
+    background: #fff7ed;
   }
 
   .goal-popup.neutral {
-    background: linear-gradient(120deg, #6366f1, #8b5cf6);
+    background: linear-gradient(120deg, #38bdf8, #fef08a);
   }
 
   .goal-popup.blue {
-    background: linear-gradient(120deg, #0ea5e9, #3b82f6);
+    background: linear-gradient(120deg, #0ea5e9, #22c55e);
   }
 
   .goal-popup.red {
@@ -46,7 +48,7 @@
   }
 
   .goal-icon {
-    font-size: 1.35rem;
+    font-size: 1.45rem;
   }
 
   @keyframes drop {

@@ -81,18 +81,19 @@
 <style>
   .game {
     max-width: 1100px;
-    margin: 40px auto;
+    margin: 32px auto 64px;
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
     align-items: stretch;
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    padding: 24px 18px 36px;
+    font-family: "Baloo 2", "Fredoka", "Nunito", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #fef3c7 0%, #dbeafe 45%, #ecfdf3 100%);
+    border: 4px solid #0f172a;
+    border-radius: 32px;
+    box-shadow: 16px 16px 0 rgba(15, 23, 42, 0.16);
   }
 
   .scoreboard {
@@ -104,61 +105,89 @@
 
   .score-card {
     flex: 1;
-    border: none;
-    border-radius: 24px;
-    padding: 22px 28px;
+    border: 3px solid #0f172a;
+    border-radius: 26px;
+    padding: 24px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     text-align: left;
     cursor: pointer;
     color: white;
-    font-weight: 600;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    font-weight: 800;
+    box-shadow: 12px 12px 0 rgba(15, 23, 42, 0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
 
   .score-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.25);
+    box-shadow: 10px 14px 0 rgba(15, 23, 42, 0.22);
   }
 
   .score-card:active {
-    transform: scale(0.98);
+    transform: translateY(2px);
   }
 
   .score-card.blue-card {
-    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    background: linear-gradient(135deg, #38bdf8, #2563eb);
   }
 
   .score-card.red-card {
-    background: linear-gradient(135deg, #f87171, #dc2626);
+    background: linear-gradient(135deg, #fb7185, #f97316);
   }
 
   .score-team {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
   }
 
   .score-value {
-    font-size: 3rem;
-    font-weight: 700;
+    font-size: 3.4rem;
+    font-weight: 900;
     line-height: 1;
   }
 
+  h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.35rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
   .question {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-size: 2.1rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 4px solid #0f172a;
+    border-radius: 24px;
+    padding: 26px 22px;
+    min-height: 140px;
+    display: grid;
+    place-items: center;
+    box-shadow: 16px 16px 0 rgba(15, 23, 42, 0.16);
+    letter-spacing: -0.01em;
   }
 
   .field-wrapper {
     display: flex;
     justify-content: center;
-    margin: 10px 0 10px;
+    margin: 10px 0 6px;
   }
 
   .timer {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
+    background: #0f172a;
+    color: #fef3c7;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.16);
+    width: fit-content;
+    margin: 0 auto;
   }
 
   .buttons {
@@ -166,16 +195,28 @@
     flex-wrap: wrap;
     gap: 12px;
     justify-content: center;
+    margin-top: 4px;
   }
 
   .btn-neutral {
-    border-radius: 999px;
-    border: 2px solid #cbd5f5;
-    padding: 12px 24px;
-    background: white;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 14px 26px;
+    background: #fff;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 800;
     color: #0f172a;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.14);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  }
+
+  .btn-neutral:hover {
+    transform: translateY(-1px);
+    background: #fef08a;
+  }
+
+  .btn-neutral:active {
+    transform: translateY(1px);
   }
 
   @media (max-width: 700px) {

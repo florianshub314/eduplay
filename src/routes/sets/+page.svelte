@@ -98,13 +98,16 @@
   .sets-page {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem 4rem;
-    font-family:
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    padding: 3rem 1.5rem 4.5rem;
+    font-family: "Baloo 2", "Fredoka", "Nunito", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    background: radial-gradient(circle at 18% 18%, rgba(255, 237, 213, 0.7), transparent 36%),
+      radial-gradient(circle at 80% 12%, rgba(191, 219, 254, 0.7), transparent 32%),
+      radial-gradient(circle at 24% 82%, rgba(244, 114, 182, 0.3), transparent 32%),
+      linear-gradient(160deg, #fff7ed 0%, #e0f2fe 45%, #ecfdf3 100%);
+    border: 4px solid #0f172a;
+    border-radius: 32px;
+    box-shadow: 18px 18px 0 rgba(15, 23, 42, 0.18);
   }
 
   header {
@@ -116,24 +119,32 @@
 
   .back-btn {
     align-self: flex-start;
-    border: none;
-    background: transparent;
-    color: #2563eb;
-    font-weight: 600;
+    border: 3px solid #0f172a;
+    background: #fef08a;
+    color: #0f172a;
+    font-weight: 800;
     cursor: pointer;
-    padding: 0;
+    padding: 0.6rem 1rem;
+    border-radius: 16px;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.14);
   }
 
   h1 {
     margin: 0;
-    font-size: clamp(2rem, 3vw, 2.6rem);
+    font-size: clamp(2.2rem, 3vw, 2.8rem);
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    text-shadow: 6px 6px 0 rgba(15, 23, 42, 0.08);
   }
 
   .empty {
     padding: 2rem;
     border-radius: 1.5rem;
-    border: 2px dashed #cbd5f5;
+    border: 3px dashed #0f172a;
     text-align: center;
+    background: #fff;
+    box-shadow: 12px 12px 0 rgba(15, 23, 42, 0.12);
+    font-weight: 800;
   }
 
   .subject-tabs {
@@ -144,19 +155,22 @@
   }
 
   .subject-tabs button {
-    border-radius: 999px;
-    border: 2px solid #cbd5f5;
-    padding: 0.6rem 1.2rem;
-    font-weight: 600;
-    background: white;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 0.7rem 1.35rem;
+    font-weight: 800;
+    background: #fff;
     cursor: pointer;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.12);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   }
 
   .subject-tabs button.selected {
-    background: #2563eb;
-    color: white;
-    border-color: #2563eb;
-    box-shadow: 0 12px 25px rgba(37, 99, 235, 0.35);
+    background: #fef08a;
+    color: #0f172a;
+    border-color: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 10px 12px 0 rgba(15, 23, 42, 0.18);
   }
 
   .sets-grid {
@@ -166,35 +180,51 @@
   }
 
   .set-card {
-    border-radius: 1.5rem;
-    border: 2px solid #e2e8f0;
-    padding: 1.5rem;
-    background: white;
-    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
+    border-radius: 22px;
+    border: 3px solid #0f172a;
+    padding: 1.6rem;
+    background: #fff;
+    box-shadow: 12px 12px 0 rgba(15, 23, 42, 0.14);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   .meta {
     margin: 0;
-    color: #64748b;
-    font-size: 0.9rem;
+    color: #0f172a;
+    opacity: 0.7;
+    font-size: 0.95rem;
   }
 
   h2 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
   }
 
   .open-button {
     align-self: flex-start;
-    border-radius: 999px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    color: #0f172a;
+    border: 3px solid #0f172a;
+    padding: 0.65rem 1.15rem;
+    font-weight: 800;
     cursor: pointer;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.14);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .subject-tabs button:hover,
+  .open-button:hover,
+  .back-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .open-button:active,
+  .subject-tabs button:active,
+  .back-btn:active {
+    transform: translateY(2px);
   }
 </style>

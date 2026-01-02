@@ -176,7 +176,7 @@ Der Prototyp enthält:
 -   Ballmechanik: Position verschiebt sich pro Antwort
 -   Restart-Funktion
 
-- **Deployment:** _[URL]_  
+- **Deployment:** https://eduplaysite.netlify.app 
 
 #### 4.4.1. Entwurf (Design)
 Beschreibt die Gestaltung und Interaktion.
@@ -210,12 +210,15 @@ Fasst die technische Realisierung zusammen.
 -   Figma für Mockups
 
 - **Struktur & Komponenten:** _[Seiten, Routen, State/Stores, wichtige Komponenten]_
--   /src/routes/start/+page.svelte
--   /src/routes/game/+page.svelte
--   /src/routes/result/+page.svelte
--   /src/lib/components/QuestionCard.svelte
--   /src/lib/components/GameField.svelte
--   /src/lib/stores/gameState.js
+-   /src/routes/+page.svelte → Landing (Gast/Login-Auswahl)
+-   /src/routes/start/+page.svelte → Fachwahl & Einstieg
+-   /src/routes/mathe|deutsch|englisch|franzoesisch|andere/+page.svelte → jeweilige Spiel-Workflows inkl. Frage-Import, KI-Generator, Spiellogik
+-   /src/routes/sets/+page.svelte und /src/routes/game/[id]/… → gespeicherte Sets
+-   /src/routes/login/+page.svelte & /profil/+page.svelte → Auth/Profilverwaltung über Supabase
+-   /src/routes/api/generate-questions/+server.js → KI-Fragenservice, /api/sets/+server.js → MongoDB-Speicher für Sets
+-   /src/lib/components/game/*.svelte → wiederverwendbare UI-Bausteine (SetupScreen, ActiveGameScreen, SoccerField, GoalPopup, WinnerPopup, SaveSetPanel, etc.)
+-   /src/lib/components/inputs/FileDropzone.svelte → Drag&Drop Upload
+-   /src/lib/utils/*.js → Parser (PDF/TXT), Formatter, Random-Helper, AI-Brücke, Supabase-Speicher
 
 - **Daten & Schnittstellen [Optional]:** _[Datenquellen, API‑Entwürfe, Modelle]_
 - **Besondere Entscheidungen:** 
@@ -232,48 +235,41 @@ Fasst die technische Realisierung zusammen.
 -   Reagiert das UI gut auf Touch-Eingaben?
 
 - **Vorgehen:** 
--   Moderierter Test
--   Kurze Aufgaben
--   Smartboard oder Laptop
--   Beobachtetes Verhalten dokumentieren
+-   Moderierter Kurztest direkt im Unterricht (heute, 1. Klasse Mathematik)
+-   Einsatz auf dem Smartboard mit Touch-Eingaben
+-   Lehrperson erklärt kurz den Ablauf, danach spielen die Kinder eigenständig mehrere Runden
+-   Beobachtungen sowie spontane Rückmeldungen der Kinder werden protokolliert (Bedienung, Verständnis, Motivation)
 
-- **Stichprobe:** _[Mit wem wurde getestet? Profil; Anzahl]_ 
+- **Stichprobe:** 
+-   Eine erste Primarschulklasse (ca. 20 Kinder, Altersgruppe 7–8 Jahre)
 
 - **Aufgaben/Szenarien:** 
--   Ein Spiel in Mathematik durchführen mit einer ersten Klasse.
--   Ein Spiel neu starten.
--   Den Ball in verschiedene Richtungen bewegen.
+-   Ein komplettes Mathe-Spiel mit Addition/Subtraktion durchführen und Gewinner anzeigen
+-   Eine Runde neu starten, um zu prüfen, ob Kinder ohne Anleitung zurück zum Setup gelangen
+-   Während des Spiels gezielt falsche Antworten und Skip-Buttons auslösen, um Feedback/Timer zu beobachten
+-   Mehrere Tore erzielen, damit Tor-Popup und Ball-Rücksetzung überprüft werden
 
 - **Kennzahlen & Beobachtungen:** _[z. B. Erfolgsquote, Zeitbedarf, qualitative Findings]_  
 - **Zusammenfassung der Resultate:** _[Wichtigste Erkenntnisse; 2–4 Sätze]_  
 - **Abgeleitete Verbesserungen:** _[priorisiert, kurz begründet]_  
 - **Umgesetzte Anpassungen [Optional]:** _[Im Prototyp umgesetzte Verbesserungen aufgrund der Erkenntnisse in der Evaluation]_ Idealerweise: Zwischenstände separat deployen, Änderungen dokumentieren.
 
+
 ## 5. Erweiterungen [Optional]
 Dokumentiert Erweiterungen über den Mindestumfang hinaus.
 - **Beschreibung & Nutzen:** 
-Es sind mehrere Erweiterungen geplant, die das Grundkonzept von EduPlay sinnvoll ergänzen und den Wert für Lehrpersonen sowie Lernende erhöhen. Diese Erweiterungen verbessern die Bedienbarkeit, bieten zusätzliche Fächer und schaffen mehr Abwechslung im Unterricht.
+  Der Prototyp enthält zahlreiche Erweiterungen, die klar über die in den Übungen geforderte Basis hinausgehen:
+  1. **Persistente Fragen-Sets & Login** – Authentifizierung per Supabase (E-Mail/Passwort + OAuth), Profilverwaltung und das Speichern der Fragen-Sets in MongoDB. Über `/sets` wählen Lehrpersonen vorbereitete Sets aus, `/game/[id]` zeigt deren Inhalte, und das SaveSetPanel kann jederzeit neue Sets sichern. Damit wird das Tool von einem einmaligen Spiel zu einer Unterrichtsbibliothek.
+  2. **KI-Unterstützung & Materialparser** – Ein drag&drop FileDropzone, PDF/TXT-Parsing (mit `pdfjs` im Browser) und ein geschützter OpenAI-Endpunkt generieren automatisch Quizfragen aus Unterrichtsmaterial. Lehrpersonen definieren Instruktionen und Zahlenräume; die KI stellt sofort passende Aufgaben bereit.
+  3. **Fachspezifische Routen & Inhalte** – Jede Fachroute besitzt eigene Logiken: Mathe erlaubt Operation-Presets, Dezimalzahlen und KI-Anweisungen; Deutsch bietet Silben-/Artikel-/Großschreibung-Aufgaben sowie Bild-Szenarien; Englisch/Französisch fokussieren auf Vokabeln, „Andere Fächer“ akzeptiert freie Themen. Dadurch fühlt sich jedes Fach wie eine maßgeschneiderte App an.
+  4. **Didaktische Steuerung & Feedbackschleifen** – Neben Scorecards gibt es Falsch/Skip/Beenden-Buttons, Timer bei falschen Antworten, Tor-Popups, Winner-Popup, Sound-/Emoji-Signale (je nach Route) sowie Goal-Resets. Lehrpersonen behalten die Kontrolle über das Tempo, Kinder erhalten motivierendes Feedback und klare Statusanzeigen.
+  5. **Touch-/Smartboard-Optimierung & modulare Komponenten** – SoccerField mit ResizeObserver, Ball-Komponente, modulare Setup-/Active-/End-Screens, WinnerPopup sowie FileDropzone machen die UI auf großen Displays flüssig. Buttons sind bewusst großflächig, Farben kontrastreich, und die Komponenten können in weiteren Fächern wiederverwendet werden.
+  6. **Organisation & Infrastruktur** – Netlify-Deployment, .env-Konfiguration für Supabase/Mongo/OpenAI, GitHub-Repo mit Issue-Tracking und automatischer Adapter-Konfiguration (`adapter-netlify`). Diese Setup-Arbeiten gehen über reine Prototyp-Codierung hinaus und erlauben reale Nutzung.
 
--   Geplante bzw. teilweise vorbereitete Erweiterungen
-Mehrsprachige Fächer
-Englisch, Deutsch, Französisch und weitere frei definierbare Fächer („Andere Fächer“).
-Erhöht die Flexibilität für verschiedene Unterrichtssituationen.
--   Bildbasierte Fragen im Fach Deutsch
-Besonders nützlich für Erstklässler, die noch nicht sicher lesen können (z. B. Silbentrennung anhand eines Bildes).
-Zugänglicheres Lernen für jüngere Kinder.
--   Zusätzliche Buttons wie „Falsch“, „Skip/Überspringen“ und „Spiel beenden“
-Mehr Kontrolle und pädagogische Flexibilität während des Spiels.
--   Popup bei Tor (wird wieder eingebaut)
-Visuelles und motivierendes Feedback.
--   Optimiertes Smartboard-UI
-Große Buttons, kontrastreiche Farben, Touch-Optimierung.
-Bessere Nutzbarkeit auf Wandtafeln im Schulzimmer.
--   Emoji-Optimierung
-Emojis nur bei bestimmten Fächern (z. B. Mathe, Englisch, Deutsch).
-Einheitliches und kindgerechtes Design.
-
-- **Umsetzung in Kürze:** _[Wie wurde es gemacht?]_  
-- **Abgrenzung zum Mindestumfang:** _[klar darstellen]_  
+- **Umsetzung in Kürze:**  
+  Supabase- und Mongo-Clients liegen unter `/src/lib`, serverseitige APIs kapseln Auth & Datenbank. Die KI-Anbindung nutzt einen eigenen SvelteKit-Server-Endpoint (`/api/generate-questions`), wodurch API-Keys nie im Browser landen. Jede Fachroute bindet die gemeinsamen Komponenten ein und erweitert sie um spezifische Settings; über lokale Stores wird der Spielstatus verwaltet. Persistente Sets werden mit JWTs gesichert, damit nur eingeloggte Nutzende ihre Daten sehen.
+- **Abgrenzung zum Mindestumfang:**  
+  Der Mindestumfang deckt lediglich einen linearen Wandtafelfussball-Flow mit manueller Frageeingabe, ohne Login, ohne KI, ohne Persistenz, ohne dedizierte Fachrouten. Sämtliche oben genannten Erweiterungen (Auth, DB, KI, Drag&Drop, modulare UX, zusätzliche Steuerung, Infrastruktur) sind optionale Mehrwerte; der Basisspielmodus bleibt weiterhin als Gast nutzbar.
 
 ## 6. Projektorganisation [Optional]
 Beispiele:

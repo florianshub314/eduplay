@@ -57,10 +57,10 @@
     max-width: 960px;
     margin: 24px auto 80px;
     padding: 28px;
-    border-radius: 32px;
-    border: 2px solid #e0e7ff;
-    background: white;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    border-radius: 30px;
+    border: 4px solid #0f172a;
+    background: linear-gradient(135deg, #ffffff, #e0f2fe 55%, #fef3c7);
+    box-shadow: 14px 14px 0 rgba(15, 23, 42, 0.18);
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -89,28 +89,29 @@
   .save-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 14px;
   }
 
   input {
     flex: 1;
     min-width: 220px;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 14px 16px;
     font-size: 1rem;
     font-family: inherit;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.12);
   }
 
   .btn-primary {
-    border-radius: 999px;
-    border: none;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    font-weight: 600;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    color: #0f172a;
+    font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.35);
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.16);
     font-family: inherit;
   }
 

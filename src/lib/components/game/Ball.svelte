@@ -7,13 +7,13 @@
 
 <style>
   .ball {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     position: absolute;
     border-radius: 50%;
-    /* Sichtbarer, eigener Ball nur mit CSS */
-    background: radial-gradient(circle at 30% 30%, #ffffff, #d4d4d4 40%, #888888);
-    border: 2px solid #333333;
-    z-index: 10; /* über dem Feld */
+    background: radial-gradient(circle at 30% 30%, #fff7ed, #fed7aa 50%, #fb923c 90%);
+    border: 3px solid #0f172a;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.2);
+    z-index: 10;
   }
 </style>

@@ -205,23 +205,23 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 40px 16px 80px;
-    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 45%, #ffffff 100%);
-    font-family:
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
+    padding: 48px 16px 88px;
+    background: radial-gradient(circle at 18% 18%, rgba(255, 237, 213, 0.7), transparent 34%),
+      radial-gradient(circle at 80% 12%, rgba(191, 219, 254, 0.7), transparent 32%),
+      radial-gradient(circle at 24% 82%, rgba(244, 114, 182, 0.3), transparent 32%),
+      linear-gradient(160deg, #fff7ed 0%, #e0f2fe 45%, #ecfdf3 100%);
+    font-family: "Baloo 2", "Fredoka", "Nunito", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
   }
 
   .profile-card {
     width: 100%;
     max-width: 720px;
-    background: #fff;
+    background: linear-gradient(135deg, #ffffff, #fef3c7 55%, #dbeafe);
     border-radius: 32px;
     padding: 32px;
-    border: 2px solid #e0e7ff;
-    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
+    border: 4px solid #0f172a;
+    box-shadow: 18px 18px 0 rgba(15, 23, 42, 0.18);
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -242,12 +242,16 @@
 
   h1 {
     margin: 0;
-    font-size: clamp(2rem, 3vw, 2.4rem);
+    font-size: clamp(2.2rem, 3vw, 2.6rem);
+    letter-spacing: -0.02em;
+    color: #0f172a;
+    text-shadow: 6px 6px 0 rgba(15, 23, 42, 0.08);
   }
 
   .subtitle {
     margin: 8px 0 0;
-    color: #475569;
+    color: #0f172a;
+    opacity: 0.72;
   }
 
   .eyebrow {
@@ -255,25 +259,29 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     font-size: 0.65rem;
-    color: #94a3b8;
+    color: #0f172a;
+    opacity: 0.7;
   }
 
   .badge {
-    border-radius: 999px;
-    background: #eef2ff;
-    color: #4338ca;
-    font-weight: 600;
+    border-radius: 16px;
+    background: #fef08a;
+    color: #0f172a;
+    font-weight: 800;
     padding: 8px 14px;
+    border: 3px solid #0f172a;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.12);
   }
 
   .btn-logout {
-    border-radius: 999px;
-    border: 2px solid #fca5a5;
-    padding: 8px 16px;
-    background: white;
-    color: #b91c1c;
-    font-weight: 600;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #fb7185, #f97316);
+    color: #0f172a;
+    font-weight: 800;
     cursor: pointer;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.14);
   }
 
   .profile-meta {
@@ -281,9 +289,10 @@
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
     border-radius: 20px;
-    background: #f8fafc;
+    background: #fff;
     padding: 16px 20px;
-    border: 1px solid #e2e8f0;
+    border: 3px solid #0f172a;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.12);
   }
 
   .meta-label {
@@ -291,7 +300,8 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #475569;
+    color: #0f172a;
+    opacity: 0.7;
   }
 
   .uid {
@@ -308,18 +318,19 @@
   label {
     display: flex;
     flex-direction: column;
-    font-weight: 600;
+    font-weight: 800;
     color: #0f172a;
     gap: 8px;
   }
 
   input,
   textarea {
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
+    border-radius: 18px;
+    border: 3px solid #0f172a;
     padding: 12px 16px;
     font-size: 1rem;
     font-family: inherit;
+    box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.12);
   }
 
   textarea {
@@ -334,16 +345,14 @@
   }
 
   .btn-primary {
-    border-radius: 999px;
+    border-radius: 18px;
     padding: 12px 28px;
-    font-weight: 600;
-    border: none;
+    font-weight: 800;
+    border: 3px solid #0f172a;
     cursor: pointer;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    color: #0f172a;
+    box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.16);
   }
 
   .status {
@@ -362,6 +371,16 @@
 
   .status.info {
     color: #475569;
+  }
+
+  .btn-primary:hover,
+  .btn-logout:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:active,
+  .btn-logout:active {
+    transform: translateY(2px);
   }
 
   @media (max-width: 640px) {
