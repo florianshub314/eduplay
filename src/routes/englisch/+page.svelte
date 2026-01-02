@@ -17,6 +17,8 @@ import SaveSetPanel from "$lib/components/game/SaveSetPanel.svelte";
 import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
   import FileDropzone from "$lib/components/inputs/FileDropzone.svelte";
 
+  let setupSection;
+
   let numQuestions = 10;
   let file = null;
   let useManualInput = false;
@@ -438,64 +440,97 @@ let winnerSubtitle = "";
 </script>
 
 {#if !gameStarted && !gameOver}
-  <SetupScreen
-    title="Teams & Game Settings"
-    infoText="Leave the names empty to use Team Blue and Team Red."
-    bind:blueTeamName
-    bind:redTeamName
-    bind:numQuestions
-    on:back={goBack}
-    on:start={generateQuestions}
-  >
-    <div class="extra-settings">
-      <div class="file-row">
-        <FileDropzone
-          label="Lesson content (TXT or PDF, optional)"
-          accept=".txt,.pdf"
-          on:change={handleFileUpload}
-          fileName={file?.name}
-          loading={aiLoading}
-          description="Drag the file here or tap to choose."
-        />
-        {#if fileError}
-          <p class="file-error">{fileError}</p>
-        {/if}
-        {#if aiLoading}
-          <p class="file-info">🤖 AI is creating questions …</p>
-        {/if}
-        {#if aiError}
-          <p class="file-error">{aiError}</p>
-        {/if}
+  <div class="page-shell">
+    <section class="cta-setup" id="setup-panel" bind:this={setupSection}>
+      <div class="cta-backdrop">
+        <span class="cta-shape shape-x"></span>
+        <span class="cta-shape shape-y"></span>
+        <span class="cta-shape shape-z"></span>
       </div>
+      <div class="cta-grid stacked">
+        <SetupScreen
+          title="English – Wandtafelspiel"
+          infoText="Leave the names empty to use Team Blue and Team Red."
+          bind:blueTeamName
+          bind:redTeamName
+          bind:numQuestions
+          on:back={goBack}
+          on:start={generateQuestions}
+        >
+          <div class="extra-settings inline-settings">
+            <p class="group-label">Lesson content (optional)</p>
+            <div class="file-row">
+              <FileDropzone
+                label="File (TXT or PDF)"
+                accept=".txt,.pdf"
+                on:change={handleFileUpload}
+                fileName={file?.name}
+                loading={aiLoading}
+                description="Drag the file here or tap to choose."
+              />
+              {#if fileError}
+                <p class="file-error">{fileError}</p>
+              {/if}
+              {#if aiLoading}
+                <p class="file-info">🤖 AI is creating questions …</p>
+              {/if}
+              {#if aiError}
+                <p class="file-error">{aiError}</p>
+              {/if}
+            </div>
 
-      <label class="toggle">
-        <input type="checkbox" bind:checked={useManualInput} />
-        <span>Enter prompts manually</span>
-      </label>
+            <label class="toggle">
+              <input type="checkbox" bind:checked={useManualInput} />
+              <span>Enter prompts manually</span>
+            </label>
 
-      {#if useManualInput}
-        <textarea
-          rows="6"
-          placeholder={"Examples:\\nHaus;house\\nSchule;school"}
-          bind:value={manualInput}
-          on:input={processManualInput}
-        ></textarea>
-      {/if}
+            {#if useManualInput}
+              <textarea
+                rows="6"
+                placeholder={"Examples:\\nHaus;house\\nSchule;school"}
+                bind:value={manualInput}
+                on:input={processManualInput}
+              ></textarea>
+            {/if}
 
-      <label class="toggle">
-        <input type="checkbox" bind:checked={useAiGenerator} />
-        <span>Let AI create the questions</span>
-      </label>
+            <label class="toggle">
+              <input type="checkbox" bind:checked={useAiGenerator} />
+              <span>Let AI create the questions</span>
+            </label>
 
-      {#if useAiGenerator}
-        <textarea
-          rows="3"
-          placeholder="Optional instructions for the AI"
-          bind:value={aiInstructions}
-        ></textarea>
-      {/if}
-    </div>
-  </SetupScreen>
+            {#if useAiGenerator}
+              <textarea
+                rows="3"
+                placeholder="Optional instructions for the AI"
+                bind:value={aiInstructions}
+              ></textarea>
+            {/if}
+          </div>
+        </SetupScreen>
+
+        <div class="compact-card">
+          <p class="eyebrow">Ready to play?</p>
+          <h3>Same frame, English content</h3>
+          <p class="section-lede compact-copy">
+            Same flow as Deutsch: set teams, pick material or AI mode, then start the match.
+          </p>
+          <div class="cta-row tight">
+            <button class="cta-button primary" type="button" on:click={() => setupSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              Go to form
+            </button>
+            <button class="cta-button ghost" type="button" on:click={goBack}>
+              Back to overview
+            </button>
+          </div>
+          <ul class="mini-list">
+            <li>TXT/PDF uploads or manual pairs</li>
+            <li>AI follows your optional hints</li>
+            <li>Save sets to reuse later</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
 {/if}
 
 {#if gameStarted && !gameOver}
@@ -553,10 +588,234 @@ let winnerSubtitle = "";
 />
 
 <style>
+  :global(:root) {
+    --ink: #1f1a2d;
+    --bg: #fdf7ef;
+    --card: #fffdf8;
+    --accent-violet: #8b5cf6;
+    --accent-pink: #ff6fb7;
+    --accent-yellow: #ffd166;
+    --accent-green: #66d08f;
+  }
+
+  :global(body) {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Manrope", "Baloo 2", "Fredoka", system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .page-shell {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    padding: 42px 18px 96px;
+  }
+
+  .cta-setup {
+    max-width: 1180px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .cta-backdrop {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 32px;
+    pointer-events: none;
+  }
+
+  .cta-shape {
+    position: absolute;
+    border: 4px solid var(--ink);
+    border-radius: 40px;
+    opacity: 0.55;
+  }
+
+  .cta-shape.shape-x {
+    width: 160px;
+    height: 160px;
+    background: var(--accent-pink);
+    top: -40px;
+    left: -30px;
+    transform: rotate(-12deg);
+  }
+
+  .cta-shape.shape-y {
+    width: 200px;
+    height: 200px;
+    background: #9ae6ff;
+    bottom: -80px;
+    right: 20%;
+    transform: rotate(18deg);
+  }
+
+  .cta-shape.shape-z {
+    width: 120px;
+    height: 120px;
+    background: var(--accent-yellow);
+    top: 16%;
+    right: -50px;
+    transform: rotate(-18deg);
+  }
+
+  .cta-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    border: 4px solid var(--ink);
+    border-radius: 32px;
+    padding: 32px;
+    background: #fffef9;
+    box-shadow: 18px 18px 0 rgba(31, 26, 45, 0.18);
+    overflow: hidden;
+  }
+
+  .cta-grid.stacked {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .cta-grid :global(.config) {
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    padding: 32px 18px 42px;
+    box-sizing: border-box;
+  }
+
+  .compact-card {
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    padding: 18px 16px;
+    background: linear-gradient(160deg, #fffef9, #f2f8ff);
+    box-shadow: 12px 12px 0 rgba(31, 26, 45, 0.16);
+  }
+
+  .compact-card h3 {
+    margin: 12px 0 8px;
+    font-size: 1.3rem;
+  }
+
+  .section-lede.compact-copy {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .cta-row.tight {
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  .cta-button {
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 14px 22px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.18);
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+
+  .cta-button.primary {
+    background: linear-gradient(120deg, var(--accent-violet), var(--accent-pink));
+    color: var(--ink);
+  }
+
+  .cta-button.ghost {
+    background: #fff;
+    color: var(--ink);
+  }
+
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 14px 14px 0 rgba(31, 26, 45, 0.24);
+  }
+
+  .cta-button:active {
+    transform: translateY(2px);
+    box-shadow: 6px 6px 0 rgba(31, 26, 45, 0.2);
+  }
+
+  .mini-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  .eyebrow {
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.95rem;
+    display: inline-block;
+    padding: 10px 16px;
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    background: #fffef9;
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.14);
+    margin: 0;
+  }
+
   .extra-settings {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding: 18px;
+    border: 4px solid var(--ink);
+    border-radius: 24px;
+    box-shadow: 14px 14px 0 rgba(31, 26, 45, 0.18);
+    background: linear-gradient(135deg, #fff, #fff7e8 55%, #eaf5ff);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .extra-settings.inline-settings {
+    padding: 14px;
+    background: #fff;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .extra-settings.inline-settings:before,
+  .extra-settings.inline-settings:after {
+    display: none;
+  }
+
+  .extra-settings:before,
+  .extra-settings:after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid var(--ink);
+    opacity: 0.16;
+  }
+
+  .extra-settings:before {
+    width: 140px;
+    height: 140px;
+    background: var(--accent-pink);
+    top: -60px;
+    right: -50px;
+  }
+
+  .extra-settings:after {
+    width: 110px;
+    height: 110px;
+    background: var(--accent-yellow);
+    bottom: -40px;
+    left: -30px;
   }
 
   .file-row {
@@ -567,32 +826,88 @@ let winnerSubtitle = "";
 
   .file-info {
     margin: 0;
-    color: #475569;
-    font-size: 0.9rem;
+    color: var(--ink);
+    opacity: 0.72;
+    font-size: 0.95rem;
   }
 
   .file-error {
     margin: 0;
     color: #dc2626;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 800;
   }
 
   .toggle {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-weight: 500;
-    color: #0f172a;
+    font-weight: 800;
+    color: var(--ink);
+    padding: 12px 14px;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.14);
+  }
+
+  .toggle input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-violet);
   }
 
   textarea {
     width: 100%;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
+    border-radius: 20px;
+    border: 3px solid var(--ink);
+    padding: 14px 16px;
     font-size: 1rem;
     font-family: inherit;
     resize: vertical;
+    background: #ffffff;
+    box-shadow: 10px 10px 0px rgba(31, 26, 45, 0.14);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   }
 
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent-green);
+    box-shadow: 10px 10px 0px rgba(102, 208, 143, 0.5);
+    background: #fff8e5;
+  }
+
+  .cta-grid,
+  .compact-card {
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .cta-grid:hover,
+  .compact-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 20px 20px 0 rgba(31, 26, 45, 0.2);
+  }
+
+  @media (max-width: 780px) {
+    .cta-grid {
+      padding: 22px;
+    }
+
+    .cta-row {
+      width: 100%;
+    }
+
+    .cta-button {
+      flex: 1;
+      text-align: center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta-grid,
+    .compact-card,
+    .cta-button {
+      transition: none;
+    }
+  }
 </style>

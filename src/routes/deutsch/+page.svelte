@@ -639,95 +639,102 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
         <span class="cta-shape shape-y"></span>
         <span class="cta-shape shape-z"></span>
       </div>
-      <div class="cta-grid">
-        <div class="cta-copy">
+      <div class="cta-grid stacked">
+        <SetupScreen
+          title="Deutsch – Wandtafelspiel"
+          infoText="Wenn die Felder leer bleiben, heißen die Teams automatisch „Team Blau“ und „Team Rot“."
+          bind:blueTeamName
+          bind:redTeamName
+          bind:numQuestions
+          on:back={goBack}
+          on:start={generateQuestions}
+        >
+          <div class="extra-settings inline-settings">
+            <p class="group-label">Aufgabentyp</p>
+            <div class="task-grid">
+              <label>
+                <input type="checkbox" bind:checked={taskTypes.syllables} />
+                Silben bestimmen
+              </label>
+              <label>
+                <input type="checkbox" bind:checked={taskTypes.capitalization} />
+                Groß- und Kleinschreibung
+              </label>
+              <label>
+                <input type="checkbox" bind:checked={taskTypes.articles} />
+                Artikel bestimmen
+              </label>
+            </div>
+            <p class="file-info">Kombiniere beliebig, sonst stellen wir einen Mix zusammen.</p>
+          </div>
+        </SetupScreen>
+
+        <div class="compact-card">
           <p class="eyebrow">Bereit zum Start?</p>
-          <h2>Formular ausfüllen, Match beginnen</h2>
-          <p class="section-lede">
-            Alle Buttons behalten ihre Funktionen – du kannst nahtlos starten, zurückspringen oder
-            deine Fragen speichern.
+          <h3>Material & KI im Schnellzugriff</h3>
+          <p class="section-lede compact-copy">
+            Teams und Fragen setzen, dann Material oder KI wählen. Alles behält seine Funktion, nur
+            klar untereinander angeordnet.
           </p>
-          <div class="cta-row">
+          <div class="cta-row tight">
             <button class="cta-button primary" type="button" on:click={scrollToTop}>
-              Zurück zum Seitenanfang
+              Seitenanfang
             </button>
             <button class="cta-button ghost" type="button" on:click={goBack}>
               Zurück zur Übersicht
             </button>
           </div>
+          <ul class="mini-list">
+            <li>PDF/TXT hochladen oder manuell tippen</li>
+            <li>KI kann auf Auswahl und Hinweise reagieren</li>
+            <li>Fragenset danach speichern</li>
+          </ul>
         </div>
-        <div class="cta-form">
-          <SetupScreen
-            title="Deutsch – Wandtafelspiel"
-            infoText="Wenn die Felder leer bleiben, heißen die Teams automatisch „Team Blau“ und „Team Rot“."
-            bind:blueTeamName
-            bind:redTeamName
-            bind:numQuestions
-            on:back={goBack}
-            on:start={generateQuestions}
-          >
-            <div class="extra-settings">
-              <div class="task-grid">
-                <p class="group-label">Aufgabentyp</p>
-                <label>
-                  <input type="checkbox" bind:checked={taskTypes.syllables} />
-                  Silben bestimmen
-                </label>
-                <label>
-                  <input type="checkbox" bind:checked={taskTypes.capitalization} />
-                  Groß- und Kleinschreibung
-                </label>
-                <label>
-                  <input type="checkbox" bind:checked={taskTypes.articles} />
-                  Artikel bestimmen
-                </label>
-              </div>
 
-              <FileDropzone
-                label="Unterrichtsstoff (TXT oder PDF, optional)"
-                accept=".txt,.pdf"
-                on:change={handleFileUpload}
-                fileName={file?.name}
-                loading={aiLoading}
-              />
-              {#if fileError}
-                <p class="file-error">{fileError}</p>
-              {/if}
-              {#if aiLoading}
-                <p class="file-info">🤖 KI erstellt Fragen …</p>
-              {/if}
-              {#if aiError}
-                <p class="file-error">{aiError}</p>
-              {/if}
+        <div class="extra-settings side-panel">
+          <FileDropzone
+            label="Unterrichtsstoff (TXT oder PDF, optional)"
+            accept=".txt,.pdf"
+            on:change={handleFileUpload}
+            fileName={file?.name}
+            loading={aiLoading}
+          />
+          {#if fileError}
+            <p class="file-error">{fileError}</p>
+          {/if}
+          {#if aiLoading}
+            <p class="file-info">🤖 KI erstellt Fragen …</p>
+          {/if}
+          {#if aiError}
+            <p class="file-error">{aiError}</p>
+          {/if}
 
-              <label class="toggle">
-                <input type="checkbox" bind:checked={useManualInput} />
-                Eigene Aufgaben manuell eingeben
-              </label>
+          <label class="toggle">
+            <input type="checkbox" bind:checked={useManualInput} />
+            Eigene Aufgaben manuell eingeben
+          </label>
 
-              {#if useManualInput}
-                <textarea
-                  rows="6"
-                  placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
-                  bind:value={manualInput}
-                  on:input={processManualInput}
-                ></textarea>
-              {/if}
+          {#if useManualInput}
+            <textarea
+              rows="4"
+              placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
+              bind:value={manualInput}
+              on:input={processManualInput}
+            ></textarea>
+          {/if}
 
-              <label class="toggle">
-                <input type="checkbox" bind:checked={useAiGenerator} />
-                KI-Fragen anhand der Auswahl erzeugen
-              </label>
+          <label class="toggle">
+            <input type="checkbox" bind:checked={useAiGenerator} />
+            KI-Fragen anhand der Auswahl erzeugen
+          </label>
 
-              {#if useAiGenerator}
-                <textarea
-                  rows="3"
-                  placeholder="Zusatzhinweise an die KI (optional)"
-                  bind:value={aiInstructions}
-                ></textarea>
-              {/if}
-            </div>
-          </SetupScreen>
+          {#if useAiGenerator}
+            <textarea
+              rows="3"
+              placeholder="Zusatzhinweise an die KI (optional)"
+              bind:value={aiInstructions}
+            ></textarea>
+          {/if}
         </div>
       </div>
     </section>
@@ -1284,6 +1291,26 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     overflow: hidden;
   }
 
+  .cta-grid.stacked {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .cta-grid :global(.config) {
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    padding: 32px 18px 42px;
+    box-sizing: border-box;
+  }
+
+  .side-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
   .cta-copy h2 {
     font-size: clamp(2rem, 3vw, 2.4rem);
     margin: 12px 0 10px;
@@ -1304,6 +1331,52 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     background: linear-gradient(135deg, #fff, #fff7e8 55%, #eaf5ff);
     position: relative;
     overflow: hidden;
+  }
+
+  .compact-card {
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    padding: 18px 16px;
+    background: linear-gradient(160deg, #fffef9, #f2f8ff);
+    box-shadow: 12px 12px 0 rgba(31, 26, 45, 0.16);
+  }
+
+  .compact-card h3 {
+    margin: 12px 0 8px;
+    font-size: 1.3rem;
+  }
+
+  .section-lede.compact-copy {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .cta-row.tight {
+    margin-bottom: 10px;
+    gap: 10px;
+  }
+
+  .mini-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  .extra-settings.inline-settings {
+    padding: 14px;
+    background: #fff;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .extra-settings.inline-settings:before,
+  .extra-settings.inline-settings:after {
+    display: none;
+  }
+
+  .extra-settings.side-panel {
+    height: 100%;
   }
 
   .task-grid {
