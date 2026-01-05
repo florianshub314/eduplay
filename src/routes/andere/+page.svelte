@@ -395,6 +395,75 @@ let winnerSubtitle = "";
 
 {#if !gameStarted && !gameOver}
   <div class="page-shell">
+    <section class="feature-section">
+      <div class="section-heading">
+        <p class="eyebrow">Alles im Blick</p>
+        <h2>Andere Fächer, gleicher Ablauf</h2>
+        <p class="section-lede">
+          Nutze den gleichen Flow wie in Deutsch und Mathe: Teams setzen, Material hinzufügen oder KI
+          aktivieren, dann sofort starten.
+        </p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">✨</div>
+          <h3>Flexibel mischen</h3>
+          <p>Eigenes Thema angeben, Datei hochladen oder manuell tippen – Fragen werden passend gebaut.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">🧭</div>
+          <h3>Klarer Ablauf</h3>
+          <p>Teamnamen, Fragenanzahl, Start: die Wandtafel-Logik bleibt unverändert.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3>Sets sichern</h3>
+          <p>Speichere gute Sets und greif später in /sets darauf zu.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="explanation-section">
+      <div class="explanation-card">
+        <div class="explanation-shape shape-one"></div>
+        <div class="explanation-shape shape-two"></div>
+        <p class="eyebrow">So läuft’s</p>
+        <h2>Drei Schritte für jedes Fach</h2>
+        <p class="section-lede">
+          Thema festlegen, Fragen einspeisen und losspielen. Der Ball wandert wie gewohnt nach jeder Antwort.
+        </p>
+        <div class="steps">
+          <div class="step">
+            <span class="step-badge">1</span>
+            <div>
+              <p class="step-title">Teams & Thema</p>
+              <p class="step-copy">
+                Teams benennen, Fragenanzahl wählen, optional ein Thema eintragen.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">2</span>
+            <div>
+              <p class="step-title">Material oder KI</p>
+              <p class="step-copy">
+                TXT/PDF hochladen, manuell tippen oder KI nutzen, um Aufgaben zu erzeugen.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">3</span>
+            <div>
+              <p class="step-title">Spielen & sichern</p>
+              <p class="step-copy">
+                Spiel starten, Tore feiern und bei Bedarf das Set abspeichern.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cta-setup" id="setup-panel" bind:this={setupSection}>
       <div class="cta-backdrop">
         <span class="cta-shape shape-x"></span>
@@ -462,48 +531,83 @@ let winnerSubtitle = "";
                 bind:value={aiInstructions}
               ></textarea>
             </label>
+          </div>
 
-            <div class="ai-row">
-              <button
-                type="button"
-                class="btn-ai"
-                on:click={generateQuestionsWithAI}
-                disabled={aiLoading}
-              >
-                {#if aiLoading}
-                  KI erstellt Fragen …
-                {:else}
-                  KI-Fragen generieren
-                {/if}
-              </button>
-              {#if aiError}
-                <p class="ai-error">{aiError}</p>
+          <div class="settings-stack">
+            <div class="extra-settings side-panel">
+              <FileDropzone
+                label="Unterrichtsmaterial (TXT oder PDF)"
+                accept=".txt,.pdf"
+                on:change={handleFileUpload}
+                fileName={file?.name}
+                loading={aiLoading}
+              />
+              {#if fileError}
+                <p class="file-error">{fileError}</p>
               {/if}
+              {#if aiLoading}
+                <p class="file-info">🤖 KI analysiert das Material …</p>
+              {/if}
+              {#if aiError}
+                <p class="file-error">{aiError}</p>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useManualInput} />
+                Eigene Aufgaben manuell eingeben
+              </label>
+
+              {#if useManualInput}
+                <textarea
+                  rows="5"
+                  placeholder={"Eine Aufgabe pro Zeile\\nFrage zu Fotosynthese\\nWas bedeutet Recycling?"}
+                  bind:value={manualInput}
+                  on:input={processManualInput}
+                ></textarea>
+              {/if}
+
+              <label class="instructions-label">
+                KI-Hinweis zum Material (optional)
+                <textarea
+                  rows="3"
+                  placeholder={"z. B. nur die ersten Seiten nutzen oder bitte Multiple-Choice Fragen erstellen"}
+                  bind:value={aiInstructions}
+                ></textarea>
+              </label>
+
+              <div class="ai-row">
+                <button
+                  type="button"
+                  class="btn-ai"
+                  on:click={generateQuestionsWithAI}
+                  disabled={aiLoading}
+                >
+                  {#if aiLoading}
+                    KI erstellt Fragen …
+                  {:else}
+                    KI-Fragen generieren
+                  {/if}
+                </button>
+                {#if aiError}
+                  <p class="ai-error">{aiError}</p>
+                {/if}
+              </div>
+
+              <div class="compact-card inline">
+                <p class="eyebrow">Bereit?</p>
+                <h3>Gleicher Rahmen für jedes Fach</h3>
+                <p class="section-lede compact-copy">
+                  Thema wählen, Material oder KI nutzen – alles in einem Block wie bei Deutsch.
+                </p>
+                <ul class="mini-list">
+                  <li>Thema festhalten (optional)</li>
+                  <li>TXT/PDF oder manuelle Eingabe</li>
+                  <li>KI-Hinweis für maßgeschneiderte Fragen</li>
+                </ul>
+              </div>
             </div>
           </div>
         </SetupScreen>
-
-        <div class="compact-card">
-          <p class="eyebrow">Bereit?</p>
-          <h3>Gleicher Rahmen für jedes Fach</h3>
-          <p class="section-lede compact-copy">
-            Layout wie Deutsch: Teams setzen, Thema wählen, Material hochladen oder KI nutzen – nur
-            der Inhalt variiert.
-          </p>
-          <div class="cta-row tight">
-            <button class="cta-button primary" type="button" on:click={() => setupSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-              Zum Formular
-            </button>
-            <button class="cta-button ghost" type="button" on:click={goBack}>
-              Zurück zur Übersicht
-            </button>
-          </div>
-          <ul class="mini-list">
-            <li>Thema festhalten (optional)</li>
-            <li>TXT/PDF oder manuelle Eingabe</li>
-            <li>KI-Hinweis für maßgeschneiderte Fragen</li>
-          </ul>
-        </div>
       </div>
     </section>
   </div>
@@ -590,6 +694,151 @@ let winnerSubtitle = "";
     max-width: 1180px;
     margin: 0 auto;
     position: relative;
+  }
+
+  .feature-section {
+    max-width: 1180px;
+    margin: 0 auto 80px;
+    position: relative;
+    padding: 0 4px;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(2rem, 3vw, 2.4rem);
+    margin: 10px 0 8px;
+  }
+
+  .section-lede {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 820px;
+  }
+
+  .feature-grid {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .feature-card {
+    background: linear-gradient(180deg, #fff, #fff2de);
+    border: 4px solid var(--ink);
+    border-radius: 26px;
+    padding: 20px 18px;
+    box-shadow: 14px 14px 0 rgba(31, 26, 45, 0.18);
+  }
+
+  .feature-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--ink);
+    background: #fff;
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+  }
+
+  .feature-card p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .explanation-section {
+    max-width: 1180px;
+    margin: 0 auto 90px;
+    position: relative;
+  }
+
+  .explanation-card {
+    position: relative;
+    border: 4px solid var(--ink);
+    border-radius: 30px;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, #fff, #e6f2ff 45%, #ffe7fb 100%);
+    box-shadow: 16px 16px 0 rgba(31, 26, 45, 0.18);
+    overflow: hidden;
+  }
+
+  .explanation-card h2 {
+    margin: 10px 0 10px;
+    font-size: clamp(2rem, 3vw, 2.4rem);
+  }
+
+  .explanation-shape {
+    position: absolute;
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    opacity: 0.3;
+  }
+
+  .explanation-shape.shape-one {
+    width: 180px;
+    height: 180px;
+    background: var(--accent-violet);
+    right: -60px;
+    top: -40px;
+    transform: rotate(-14deg);
+  }
+
+  .explanation-shape.shape-two {
+    width: 140px;
+    height: 140px;
+    background: var(--accent-yellow);
+    left: -40px;
+    bottom: -50px;
+    transform: rotate(10deg);
+  }
+
+  .steps {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 3px solid var(--ink);
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    background: var(--accent-green);
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-title {
+    margin: 0 0 4px;
+    font-weight: 800;
+  }
+
+  .step-copy {
+    margin: 0;
+    line-height: 1.5;
   }
 
   .cta-backdrop {
@@ -870,6 +1119,13 @@ let winnerSubtitle = "";
     gap: 8px;
   }
 
+  .settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
   .btn-ai {
     border-radius: 999px;
     border: 3px solid var(--ink);
@@ -925,88 +1181,4 @@ let winnerSubtitle = "";
       transition: none;
     }
   }
-</style>
-
-  .topic-label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-weight: 500;
-  }
-
-  .topic-label input {
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-  }
-
-  .file-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .file-info {
-    margin: 0;
-    color: #475569;
-    font-size: 0.9rem;
-  }
-
-  .file-error {
-    margin: 0;
-    color: #dc2626;
-    font-size: 0.9rem;
-  }
-
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 500;
-  }
-
-  textarea {
-    width: 100%;
-    border-radius: 16px;
-    border: 2px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 1rem;
-    font-family: inherit;
-    resize: vertical;
-  }
-
-  .instructions-label {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .ai-row {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .btn-ai {
-    border-radius: 999px;
-    border: none;
-    background: #7c3aed;
-    color: white;
-    padding: 12px 24px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .btn-ai:disabled {
-    opacity: 0.7;
-    cursor: progress;
-  }
-
-  .ai-error {
-    margin: 0;
-    color: #dc2626;
-    font-weight: 500;
-  }
-
 </style>

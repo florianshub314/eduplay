@@ -667,75 +667,69 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
             </div>
             <p class="file-info">Kombiniere beliebig, sonst stellen wir einen Mix zusammen.</p>
           </div>
-        </SetupScreen>
 
-        <div class="compact-card">
-          <p class="eyebrow">Bereit zum Start?</p>
-          <h3>Material & KI im Schnellzugriff</h3>
-          <p class="section-lede compact-copy">
-            Teams und Fragen setzen, dann Material oder KI wählen. Alles behält seine Funktion, nur
-            klar untereinander angeordnet.
-          </p>
-          <div class="cta-row tight">
-            <button class="cta-button primary" type="button" on:click={scrollToTop}>
-              Seitenanfang
-            </button>
-            <button class="cta-button ghost" type="button" on:click={goBack}>
-              Zurück zur Übersicht
-            </button>
+          <div class="settings-stack">
+            <div class="extra-settings side-panel">
+              <FileDropzone
+                label="Unterrichtsstoff (TXT oder PDF, optional)"
+                accept=".txt,.pdf"
+                on:change={handleFileUpload}
+                fileName={file?.name}
+                loading={aiLoading}
+              />
+              {#if fileError}
+                <p class="file-error">{fileError}</p>
+              {/if}
+              {#if aiLoading}
+                <p class="file-info">🤖 KI erstellt Fragen …</p>
+              {/if}
+              {#if aiError}
+                <p class="file-error">{aiError}</p>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useManualInput} />
+                Eigene Aufgaben manuell eingeben
+              </label>
+
+              {#if useManualInput}
+                <textarea
+                  rows="4"
+                  placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
+                  bind:value={manualInput}
+                  on:input={processManualInput}
+                ></textarea>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useAiGenerator} />
+                KI-Fragen anhand der Auswahl erzeugen
+              </label>
+
+              {#if useAiGenerator}
+                <textarea
+                  rows="3"
+                  placeholder="Zusatzhinweise an die KI (optional)"
+                  bind:value={aiInstructions}
+                ></textarea>
+              {/if}
+
+              <div class="compact-card inline">
+                <p class="eyebrow">Bereit zum Start?</p>
+                <h3>Material & KI im Schnellzugriff</h3>
+                <p class="section-lede compact-copy">
+                  Teams und Fragen setzen, dann Material oder KI wählen. Alles behält seine Funktion, nur
+                  klar untereinander angeordnet.
+                </p>
+                <ul class="mini-list">
+                  <li>PDF/TXT hochladen oder manuell tippen</li>
+                  <li>KI kann auf Auswahl und Hinweise reagieren</li>
+                  <li>Fragenset danach speichern</li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <ul class="mini-list">
-            <li>PDF/TXT hochladen oder manuell tippen</li>
-            <li>KI kann auf Auswahl und Hinweise reagieren</li>
-            <li>Fragenset danach speichern</li>
-          </ul>
-        </div>
-
-        <div class="extra-settings side-panel">
-          <FileDropzone
-            label="Unterrichtsstoff (TXT oder PDF, optional)"
-            accept=".txt,.pdf"
-            on:change={handleFileUpload}
-            fileName={file?.name}
-            loading={aiLoading}
-          />
-          {#if fileError}
-            <p class="file-error">{fileError}</p>
-          {/if}
-          {#if aiLoading}
-            <p class="file-info">🤖 KI erstellt Fragen …</p>
-          {/if}
-          {#if aiError}
-            <p class="file-error">{aiError}</p>
-          {/if}
-
-          <label class="toggle">
-            <input type="checkbox" bind:checked={useManualInput} />
-            Eigene Aufgaben manuell eingeben
-          </label>
-
-          {#if useManualInput}
-            <textarea
-              rows="4"
-              placeholder={"Beispiele:\\nArtikel einsetzen\\nPlural bilden\\nSätze korrigieren"}
-              bind:value={manualInput}
-              on:input={processManualInput}
-            ></textarea>
-          {/if}
-
-          <label class="toggle">
-            <input type="checkbox" bind:checked={useAiGenerator} />
-            KI-Fragen anhand der Auswahl erzeugen
-          </label>
-
-          {#if useAiGenerator}
-            <textarea
-              rows="3"
-              placeholder="Zusatzhinweise an die KI (optional)"
-              bind:value={aiInstructions}
-            ></textarea>
-          {/if}
-        </div>
+        </SetupScreen>
       </div>
     </section>
   </div>
@@ -1281,8 +1275,8 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
   .cta-grid {
     position: relative;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 18px;
     border: 4px solid var(--ink);
     border-radius: 32px;
     padding: 32px;
@@ -1291,10 +1285,8 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     overflow: hidden;
   }
 
-  .cta-grid.stacked {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    gap: 18px;
+  .cta-grid > * {
+    width: 100%;
   }
 
   .cta-grid :global(.config) {
@@ -1352,7 +1344,7 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
   }
 
   .cta-row.tight {
-    margin-bottom: 10px;
+    margin-top: 10px;
     gap: 10px;
   }
 
@@ -1377,6 +1369,13 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
 
   .extra-settings.side-panel {
     height: 100%;
+  }
+
+  .settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
   }
 
   .task-grid {

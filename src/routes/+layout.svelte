@@ -62,7 +62,7 @@ const hideNavRoutes = new Set(["/login", "/"]);
       <span class="nav-shape a"></span>
       <span class="nav-shape b"></span>
     </div>
-    <button type="button" class="brand" on:click={() => goto("/start")}>
+    <button type="button" class="brand" on:click={() => goto("/")}>
       <span class="brand-badge" aria-hidden="true">EP</span>
       <span class="brand-text">EduPlay</span>
     </button>

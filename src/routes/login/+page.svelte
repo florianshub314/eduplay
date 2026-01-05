@@ -5,6 +5,7 @@
   const explicitRedirectUrl = import.meta.env.VITE_PUBLIC_SITE_URL;
   let email = "";
   let password = "";
+  let gradeLevel = "";
   let isLogin = true;
   let error = "";
   let loading = false;
@@ -24,7 +25,12 @@
       } else {
         const { error: err } = await supabase.auth.signUp({
           email,
-          password
+          password,
+          options: {
+            data: {
+              gradeLevel
+            }
+          }
         });
         if (err) throw err;
       }
@@ -89,21 +95,29 @@
     opacity: 0.78;
   }
 
+  .stack {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
   label {
     display: block;
-    margin: 0.8rem 0 0.25rem;
     font-weight: 800;
     color: #0f172a;
+    text-align: left;
   }
 
   input {
     width: 100%;
     padding: 0.85rem 1rem;
-    margin-bottom: 0.2rem;
     border-radius: 18px;
     border: 3px solid #0f172a;
     font-size: 1rem;
     box-shadow: 8px 8px 0 rgba(15, 23, 42, 0.12);
+    box-sizing: border-box;
   }
 
   button {
@@ -113,7 +127,6 @@
     border-radius: 18px;
     border: 3px solid #0f172a;
     cursor: pointer;
-    margin-top: 0.65rem;
     font-weight: 800;
     box-shadow: 10px 10px 0 rgba(15, 23, 42, 0.16);
     transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
@@ -173,17 +186,33 @@
     <div class="error">{error}</div>
   {/if}
 
-  <form on:submit|preventDefault={handleSubmit}>
-    <label for="email-input">E-Mail</label>
-    <input id="email-input" type="email" bind:value={email} required />
+  <form class="stack" on:submit|preventDefault={handleSubmit}>
+    <div>
+      <label for="email-input">E-Mail</label>
+      <input id="email-input" type="email" bind:value={email} required />
+    </div>
 
-    <label for="password-input">Passwort</label>
-    <input
-      id="password-input"
-      type="password"
-      bind:value={password}
-      required
-    />
+    <div>
+      <label for="password-input">Passwort</label>
+      <input
+        id="password-input"
+        type="password"
+        bind:value={password}
+        required
+      />
+    </div>
+
+    {#if !isLogin}
+      <div>
+        <label for="grade-input">Schulstufe / Klasse</label>
+        <input
+          id="grade-input"
+          type="text"
+          bind:value={gradeLevel}
+          placeholder="z. B. 5. Klasse, Sek B"
+        />
+      </div>
+    {/if}
 
     <button class="btn-primary" disabled={loading}>
       {#if loading}
@@ -194,29 +223,32 @@
     </button>
   </form>
 
-  <button class="btn-google" type="button" on:click={signInWithGoogle} disabled={oauthLoading}>
-    {#if oauthLoading}
-      Mit Google wird verbunden…
-    {:else}
-      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" />
-      Mit Google anmelden
-    {/if}
-  </button>
+  <div class="stack" style="margin-top: 0.5rem;">
+    <button class="btn-google" type="button" on:click={signInWithGoogle} disabled={oauthLoading}>
+      {#if oauthLoading}
+        Mit Google wird verbunden…
+      {:else}
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" />
+        Mit Google anmelden
+      {/if}
+    </button>
 
-  <button
-    class="btn-secondary"
-    on:click={() => (isLogin = !isLogin)}
-  >
-    {isLogin
-      ? "Noch kein Konto? Jetzt registrieren"
-      : "Schon ein Konto? Zum Login"}
-  </button>
+    <button
+      class="btn-secondary"
+      type="button"
+      on:click={() => (isLogin = !isLogin)}
+    >
+      {isLogin
+        ? "Noch kein Konto? Jetzt registrieren"
+        : "Schon ein Konto? Zum Login"}
+    </button>
 
-  <button
-    class="btn-ghost"
-    type="button"
-    on:click={() => goto("/")}
-  >
-    Zurück zur Auswahl (Gast wählen)
-  </button>
+    <button
+      class="btn-ghost"
+      type="button"
+      on:click={() => goto("/")}
+    >
+      Zurück zur Auswahl (Gast wählen)
+    </button>
+  </div>
 </main>

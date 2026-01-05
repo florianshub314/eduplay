@@ -443,6 +443,74 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
 
 {#if !gameStarted && !gameOver}
   <div class="page-shell">
+    <section class="feature-section">
+      <div class="section-heading">
+        <p class="eyebrow">Tout en vue</p>
+        <h2>Français en trois étapes claires</h2>
+        <p class="section-lede">
+          Même structure que Deutsch et Maths: équipes, matériel ou IA, puis le match démarre aussitôt.
+        </p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">✨</div>
+          <h3>Mixer vocabulaire et grammaire</h3>
+          <p>Charge un fichier, tape tes prompts ou laisse l’IA proposer des questions variées.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">🧭</div>
+          <h3>Parcours clair</h3>
+          <p>Nommer les équipes, choisir le nombre de questions, lancer le duel sur la wandtafel.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3>Sauver les sets</h3>
+          <p>Garde tes listes de vocabulaire ou tes sets IA et réutilise-les depuis /sets.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="explanation-section">
+      <div class="explanation-card">
+        <div class="explanation-shape shape-one"></div>
+        <div class="explanation-shape shape-two"></div>
+        <p class="eyebrow">Comment ça marche</p>
+        <h2>Trois étapes pour le jeu de tableau</h2>
+        <p class="section-lede">
+          Prépare les équipes, choisis la source des questions, puis suis la balle à chaque bonne réponse.
+        </p>
+        <div class="steps">
+          <div class="step">
+            <span class="step-badge">1</span>
+            <div>
+              <p class="step-title">Équipes et quantité</p>
+              <p class="step-copy">
+                Nomme les équipes, fixe le nombre de questions, coche IA ou saisie manuelle.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">2</span>
+            <div>
+              <p class="step-title">Ajouter du contenu</p>
+              <p class="step-copy">
+                Glisse un TXT/PDF, tape des paires de vocabulaire ou démarre avec le set par défaut.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">3</span>
+            <div>
+              <p class="step-title">Jouer et sauvegarder</p>
+              <p class="step-copy">
+                Lance le match, vois les buts se marquer et enregistre le set quand il te plaît.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cta-setup" id="setup-panel" bind:this={setupSection}>
       <div class="cta-backdrop">
         <span class="cta-shape shape-x"></span>
@@ -508,28 +576,70 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
               ></textarea>
             {/if}
           </div>
-        </SetupScreen>
 
-        <div class="compact-card">
-          <p class="eyebrow">Prêt ?</p>
-          <h3>Même cadre, contenu français</h3>
-          <p class="section-lede compact-copy">
-            Identique à Deutsch: équipes, matériel TXT/PDF ou saisie manuelle, plus IA au besoin.
-          </p>
-          <div class="cta-row tight">
-            <button class="cta-button primary" type="button" on:click={() => setupSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-              Aller au formulaire
-            </button>
-            <button class="cta-button ghost" type="button" on:click={goBack}>
-              Retour à l’aperçu
-            </button>
+          <div class="settings-stack">
+            <div class="extra-settings side-panel">
+              <p class="group-label">Matériel & IA</p>
+              <FileDropzone
+                label="Fichier (TXT ou PDF)"
+                accept=".txt,.pdf"
+                on:change={handleFileUpload}
+                fileName={file?.name}
+                loading={aiLoading}
+                description="Dépose le fichier ici ou clique pour l'importer."
+              />
+              {#if fileError}
+                <p class="file-error">{fileError}</p>
+              {/if}
+              {#if aiLoading}
+                <p class="file-info">🤖 La KI crée des questions …</p>
+              {/if}
+              {#if aiError}
+                <p class="file-error">{aiError}</p>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useManualInput} />
+                Saisir les questions manuellement
+              </label>
+
+              {#if useManualInput}
+                <textarea
+                  rows="6"
+                  placeholder={"Exemples:\nHaus;maison\nKatze;chat"}
+                  bind:value={manualInput}
+                  on:input={processManualInput}
+                ></textarea>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useAiGenerator} />
+                Laisser la KI créer les questions
+              </label>
+
+              {#if useAiGenerator}
+                <textarea
+                  rows="3"
+                  placeholder="Consignes supplémentaires pour la KI (optionnel)"
+                  bind:value={aiInstructions}
+                ></textarea>
+              {/if}
+
+              <div class="compact-card inline">
+                <p class="eyebrow">Prêt ?</p>
+                <h3>Même cadre, contenu français</h3>
+                <p class="section-lede compact-copy">
+                  Identique à Deutsch: équipes, matériel TXT/PDF ou saisie manuelle, plus IA au besoin.
+                </p>
+                <ul class="mini-list">
+                  <li>TXT/PDF ou saisie manuelle</li>
+                  <li>IA avec instructions optionnelles</li>
+                  <li>Enregistrer et réutiliser les sets</li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <ul class="mini-list">
-            <li>TXT/PDF ou saisie manuelle</li>
-            <li>IA avec instructions optionnelles</li>
-            <li>Enregistrer et réutiliser les sets</li>
-          </ul>
-        </div>
+        </SetupScreen>
       </div>
     </section>
   </div>
@@ -618,6 +728,151 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     max-width: 1180px;
     margin: 0 auto;
     position: relative;
+  }
+
+  .feature-section {
+    max-width: 1180px;
+    margin: 0 auto 80px;
+    position: relative;
+    padding: 0 4px;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(2rem, 3vw, 2.4rem);
+    margin: 10px 0 8px;
+  }
+
+  .section-lede {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 820px;
+  }
+
+  .feature-grid {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .feature-card {
+    background: linear-gradient(180deg, #fff, #fff2de);
+    border: 4px solid var(--ink);
+    border-radius: 26px;
+    padding: 20px 18px;
+    box-shadow: 14px 14px 0 rgba(31, 26, 45, 0.18);
+  }
+
+  .feature-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--ink);
+    background: #fff;
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+  }
+
+  .feature-card p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .explanation-section {
+    max-width: 1180px;
+    margin: 0 auto 90px;
+    position: relative;
+  }
+
+  .explanation-card {
+    position: relative;
+    border: 4px solid var(--ink);
+    border-radius: 30px;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, #fff, #e6f2ff 45%, #ffe7fb 100%);
+    box-shadow: 16px 16px 0 rgba(31, 26, 45, 0.18);
+    overflow: hidden;
+  }
+
+  .explanation-card h2 {
+    margin: 10px 0 10px;
+    font-size: clamp(2rem, 3vw, 2.4rem);
+  }
+
+  .explanation-shape {
+    position: absolute;
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    opacity: 0.3;
+  }
+
+  .explanation-shape.shape-one {
+    width: 180px;
+    height: 180px;
+    background: var(--accent-violet);
+    right: -60px;
+    top: -40px;
+    transform: rotate(-14deg);
+  }
+
+  .explanation-shape.shape-two {
+    width: 140px;
+    height: 140px;
+    background: var(--accent-yellow);
+    left: -40px;
+    bottom: -50px;
+    transform: rotate(10deg);
+  }
+
+  .steps {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 3px solid var(--ink);
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    background: var(--accent-green);
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-title {
+    margin: 0 0 4px;
+    font-weight: 800;
+  }
+
+  .step-copy {
+    margin: 0;
+    line-height: 1.5;
   }
 
   .cta-backdrop {
@@ -824,6 +1079,13 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
   }
 
   .file-info {

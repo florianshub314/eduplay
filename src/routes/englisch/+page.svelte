@@ -441,6 +441,75 @@ let winnerSubtitle = "";
 
 {#if !gameStarted && !gameOver}
   <div class="page-shell">
+    <section class="feature-section">
+      <div class="section-heading">
+        <p class="eyebrow">Everything in view</p>
+        <h2>English drills in three clear tiles</h2>
+        <p class="section-lede">
+          Pick teams, mix vocabulary or grammar, and add AI if you like. Same layout as Deutsch,
+          tuned for English class.
+        </p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">✨</div>
+          <h3>Mix vocab & grammar</h3>
+          <p>Upload a list, type prompts yourself, or let the AI create fresh tasks.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">🧭</div>
+          <h3>Clear flow</h3>
+          <p>Team names, number of questions, hit start—your wandtafel match begins right away.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">💾</div>
+          <h3>Save sets</h3>
+          <p>Store vocab lists and AI sets to reuse later in /sets.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="explanation-section">
+      <div class="explanation-card">
+        <div class="explanation-shape shape-one"></div>
+        <div class="explanation-shape shape-two"></div>
+        <p class="eyebrow">How it works</p>
+        <h2>Three steps for the English board game</h2>
+        <p class="section-lede">
+          Set up the teams, choose how to build questions, and watch the ball move with every answer.
+        </p>
+        <div class="steps">
+          <div class="step">
+            <span class="step-badge">1</span>
+            <div>
+              <p class="step-title">Teams & amount</p>
+              <p class="step-copy">
+                Name the teams, pick the number of questions, and decide on AI or manual input.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">2</span>
+            <div>
+              <p class="step-title">Add material</p>
+              <p class="step-copy">
+                Drag in TXT/PDF, type vocab pairs, or just start with the defaults.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-badge">3</span>
+            <div>
+              <p class="step-title">Play & store</p>
+              <p class="step-copy">
+                Start the match, track goals, and save the set when you like the result.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="cta-setup" id="setup-panel" bind:this={setupSection}>
       <div class="cta-backdrop">
         <span class="cta-shape shape-x"></span>
@@ -506,28 +575,70 @@ let winnerSubtitle = "";
               ></textarea>
             {/if}
           </div>
-        </SetupScreen>
 
-        <div class="compact-card">
-          <p class="eyebrow">Ready to play?</p>
-          <h3>Same frame, English content</h3>
-          <p class="section-lede compact-copy">
-            Same flow as Deutsch: set teams, pick material or AI mode, then start the match.
-          </p>
-          <div class="cta-row tight">
-            <button class="cta-button primary" type="button" on:click={() => setupSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-              Go to form
-            </button>
-            <button class="cta-button ghost" type="button" on:click={goBack}>
-              Back to overview
-            </button>
+          <div class="settings-stack">
+            <div class="extra-settings side-panel">
+              <p class="group-label">Material & AI</p>
+              <FileDropzone
+                label="File (TXT or PDF)"
+                accept=".txt,.pdf"
+                on:change={handleFileUpload}
+                fileName={file?.name}
+                loading={aiLoading}
+                description="Drag the file here or tap to choose."
+              />
+              {#if fileError}
+                <p class="file-error">{fileError}</p>
+              {/if}
+              {#if aiLoading}
+                <p class="file-info">🤖 AI is creating questions …</p>
+              {/if}
+              {#if aiError}
+                <p class="file-error">{aiError}</p>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useManualInput} />
+                <span>Enter prompts manually</span>
+              </label>
+
+              {#if useManualInput}
+                <textarea
+                  rows="6"
+                  placeholder={"Examples:\\nHaus;house\\nSchule;school"}
+                  bind:value={manualInput}
+                  on:input={processManualInput}
+                ></textarea>
+              {/if}
+
+              <label class="toggle">
+                <input type="checkbox" bind:checked={useAiGenerator} />
+                <span>Let AI create the questions</span>
+              </label>
+
+              {#if useAiGenerator}
+                <textarea
+                  rows="3"
+                  placeholder="Optional instructions for the AI"
+                  bind:value={aiInstructions}
+                ></textarea>
+              {/if}
+
+              <div class="compact-card inline">
+                <p class="eyebrow">Ready?</p>
+                <h3>Same flow as Deutsch</h3>
+                <p class="section-lede compact-copy">
+                  Teams, questions, then material or AI – everything in one stack.
+                </p>
+                <ul class="mini-list">
+                  <li>TXT/PDF uploads or manual pairs</li>
+                  <li>AI follows your optional hints</li>
+                  <li>Save sets to reuse later</li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <ul class="mini-list">
-            <li>TXT/PDF uploads or manual pairs</li>
-            <li>AI follows your optional hints</li>
-            <li>Save sets to reuse later</li>
-          </ul>
-        </div>
+        </SetupScreen>
       </div>
     </section>
   </div>
@@ -616,6 +727,151 @@ let winnerSubtitle = "";
     max-width: 1180px;
     margin: 0 auto;
     position: relative;
+  }
+
+  .feature-section {
+    max-width: 1180px;
+    margin: 0 auto 80px;
+    position: relative;
+    padding: 0 4px;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(2rem, 3vw, 2.4rem);
+    margin: 10px 0 8px;
+  }
+
+  .section-lede {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    max-width: 820px;
+  }
+
+  .feature-grid {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .feature-card {
+    background: linear-gradient(180deg, #fff, #fff2de);
+    border: 4px solid var(--ink);
+    border-radius: 26px;
+    padding: 20px 18px;
+    box-shadow: 14px 14px 0 rgba(31, 26, 45, 0.18);
+  }
+
+  .feature-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--ink);
+    background: #fff;
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+  }
+
+  .feature-card p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .explanation-section {
+    max-width: 1180px;
+    margin: 0 auto 90px;
+    position: relative;
+  }
+
+  .explanation-card {
+    position: relative;
+    border: 4px solid var(--ink);
+    border-radius: 30px;
+    padding: 32px 28px;
+    background: linear-gradient(135deg, #fff, #e6f2ff 45%, #ffe7fb 100%);
+    box-shadow: 16px 16px 0 rgba(31, 26, 45, 0.18);
+    overflow: hidden;
+  }
+
+  .explanation-card h2 {
+    margin: 10px 0 10px;
+    font-size: clamp(2rem, 3vw, 2.4rem);
+  }
+
+  .explanation-shape {
+    position: absolute;
+    border: 4px solid var(--ink);
+    border-radius: 999px;
+    opacity: 0.3;
+  }
+
+  .explanation-shape.shape-one {
+    width: 180px;
+    height: 180px;
+    background: var(--accent-violet);
+    right: -60px;
+    top: -40px;
+    transform: rotate(-14deg);
+  }
+
+  .explanation-shape.shape-two {
+    width: 140px;
+    height: 140px;
+    background: var(--accent-yellow);
+    left: -40px;
+    bottom: -50px;
+    transform: rotate(10deg);
+  }
+
+  .steps {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 14px 16px;
+    box-shadow: 10px 10px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 3px solid var(--ink);
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    background: var(--accent-green);
+    box-shadow: 8px 8px 0 rgba(31, 26, 45, 0.12);
+  }
+
+  .step-title {
+    margin: 0 0 4px;
+    font-weight: 800;
+  }
+
+  .step-copy {
+    margin: 0;
+    line-height: 1.5;
   }
 
   .cta-backdrop {
@@ -837,6 +1093,15 @@ let winnerSubtitle = "";
     font-size: 0.95rem;
     font-weight: 800;
   }
+
+  .settings-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+  }
+
+  
 
   .toggle {
     display: flex;
