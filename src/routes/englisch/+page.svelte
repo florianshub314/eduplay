@@ -528,52 +528,7 @@ let winnerSubtitle = "";
         >
           <div class="extra-settings inline-settings">
             <p class="group-label">Lesson content (optional)</p>
-            <div class="file-row">
-              <FileDropzone
-                label="File (TXT or PDF)"
-                accept=".txt,.pdf"
-                on:change={handleFileUpload}
-                fileName={file?.name}
-                loading={aiLoading}
-                description="Drag the file here or tap to choose."
-              />
-              {#if fileError}
-                <p class="file-error">{fileError}</p>
-              {/if}
-              {#if aiLoading}
-                <p class="file-info">🤖 AI is creating questions …</p>
-              {/if}
-              {#if aiError}
-                <p class="file-error">{aiError}</p>
-              {/if}
-            </div>
-
-            <label class="toggle">
-              <input type="checkbox" bind:checked={useManualInput} />
-              <span>Enter prompts manually</span>
-            </label>
-
-            {#if useManualInput}
-              <textarea
-                rows="6"
-                placeholder={"Examples:\\nHaus;house\\nSchule;school"}
-                bind:value={manualInput}
-                on:input={processManualInput}
-              ></textarea>
-            {/if}
-
-            <label class="toggle">
-              <input type="checkbox" bind:checked={useAiGenerator} />
-              <span>Let AI create the questions</span>
-            </label>
-
-            {#if useAiGenerator}
-              <textarea
-                rows="3"
-                placeholder="Optional instructions for the AI"
-                bind:value={aiInstructions}
-              ></textarea>
-            {/if}
+            <p class="file-info">Choose material or AI settings im Block below.</p>
           </div>
 
           <div class="settings-stack">
@@ -628,7 +583,7 @@ let winnerSubtitle = "";
                 <p class="eyebrow">Ready?</p>
                 <h3>Same flow as Deutsch</h3>
                 <p class="section-lede compact-copy">
-                  Teams, questions, then material or AI – everything in one stack.
+                  Teams, questions, then material or AI – alles in einem Block für Englisch.
                 </p>
                 <ul class="mini-list">
                   <li>TXT/PDF uploads or manual pairs</li>

@@ -59,38 +59,51 @@ Sie profitieren besonders von visuellen, interaktiven und teamorientierten Lernf
 ## 3. Anforderungen & Umfang
 Beschreibt den verbindlichen Umfang gemäss Übungen und allfällige Erweiterungen.
 - **Kernfunktionalität (Mindestumfang):** 
-Gemäss den Übungen ab Semesterwoche 8 sowie den Projektanforderungen () umfasst der Mindestumfang Folgendes:
--   Startseite mit Auswahl der Kategorie (Mathe, Englisch, Deutsch, Französisch, Andere Fächer).
--   Lerninhalte laden:
-Direkte Eingabe von Fragen/Antworten oder
-Hochladen einer Datei (z. B. einfache Textliste).
--   Quiz-Spielablauf:
-Zwei Teams (Rot & Blau) treten gegeneinander an.
-Jede richtige Antwort bewegt den Ball Richtung gegnerisches Tor.
-Visuelle Rückmeldung für richtig/falsch.
--   Spielfeldansicht mit klar sichtbarer Ballposition (Wandtafelfußball-Stil).
--   Fragenanzeige + Antwort-Buttons (Touch-kompatibel).
--   Resultatansicht nach Abschluss mit Anzeige des Gewinnerteams.
--   Navigation zwischen Start → Spiel → Ergebnis.
+1. Startseite → Fach wählen (Mathematik).
+2. Spiel-Einstellungen festlegen (z. B. Rechenart, Zahlenraum/Schwierigkeit).
+3. Fragen vorbereiten (manuell / Upload / KI – gemäss Umsetzung).
+4. Spiel starten → Fragen beantworten → visuelles Feedback & Ballbewegung.
+5. Spielende mit Gewinneranzeige.
+6. Navigation zurück ins Menü (Start-/Fächerauswahl).
 
 - **Akzeptanzkriterien:** 
--   Nutzende können einen vollständigen Spielablauf von Start bis Resultat ohne Fehlermeldung durchführen.
--   Fragen werden korrekt geladen und angezeigt.
--   Ball bewegt sich sichtbar nach jeder richtigen Antwort.
--   Die Bedienung ist klar, kindgerecht und konsistent.
--   Alle wesentlichen Schritte funktionieren auf Touch-Geräten (z. B. Smartboard).
--   Spiel lässt sich jederzeit neu starten.
+AK-1 Fachauswahl
+Nach Auswahl von „Mathematik“ wird die Mathe-Spielumgebung ohne Fehlermeldung geladen.
+AK-2 Spiel-Einstellungen (Mathe)
+Vor Spielstart können die Rechenart und ein Zahlenraum festgelegt werden.
+Die gewählten Einstellungen werden im Spiel korrekt angewendet.
+AK-3 Spielstart
+Der Übergang vom Setup in die Spielansicht erfolgt ohne Seitenreload und ohne Fehlerzustand.
+AK-4 Antwort & Feedback
+Antworten werden über Buttons ausgelöst.
+Nach jeder Antwort erfolgt sofort sichtbares Feedback (richtig/falsch).
+AK-5 Spielmechanik (Ball)
+Nach einer korrekten Antwort bewegt sich der Ball sichtbar in Richtung gegnerisches Tor.
+Die Ballposition ist jederzeit eindeutig erkennbar.
+AK-6 Spielende
+Das Spiel endet bei Erreichen der definierten Gewinnbedingung.
+Das Gewinnerteam wird klar und eindeutig angezeigt.
+AK-7 Navigation zum Menü (Endzustand)
+Nach Spielende kann zur Menü-/Startansicht zurücknavigiert werden, um ein neues Spiel oder Fach zu wählen.
+Die Navigation funktioniert ohne manuellen Browser-Reload.
 
 - **Erweiterungen [Optional]:** 
--   Kategorien: Englisch, Deutsch, Französisch, Andere Fächer
--   Anzeige von Emojis bei einzelnen Fächern
--   Option für falsche Antwort, Skip, Spiel beenden
--   Soundeffekte (Jubel, Tor, Fehlton)
--   Popup bei Tor (wird wieder implementiert)
--   Möglichkeit, Bilder im Deutsch-Spiel zu nutzen (z. B. Silben-Bestimmung)
--   Lehrer-Modus zur Frageverwaltung
--   Zusätzliche Layout- oder Designoptimierungen basierend auf Figma-Mockups
--   Smartboard-freundliches UI, große Buttons, klare Farben
+Fachspezifische Spielmodi
+Neben Mathematik wurden eigenständige Spielmodi für Deutsch, Englisch, Französisch und weitere Fächer umgesetzt. Jeder Modus ist didaktisch auf das jeweilige Fach abgestimmt und nutzt denselben bewährten Spielmechanismus.
+Erweiterte Spiel-Einstellungen (Mathematik)
+Lehrpersonen können Rechenart und Zahlenraum festlegen. Dadurch lässt sich der Schwierigkeitsgrad flexibel an Klassenstufe und Lernziel anpassen.
+KI-gestützte Fragengenerierung
+Fragen können automatisiert über einen KI-Service generiert werden. Lehrpersonen geben Rahmenbedingungen vor und erhalten sofort einsetzbare Aufgaben.
+Datei-Upload und automatisches Parsing
+Fragen lassen sich über Datei-Uploads importieren und in spielbare Aufgaben umwandeln. Dies reduziert den Vorbereitungsaufwand im Unterricht deutlich.
+Persistente Fragen-Sets und Login
+Über ein Login können Fragen-Sets gespeichert, verwaltet und wiederverwendet werden. Dadurch eignet sich der Prototyp für den wiederholten Einsatz im Unterricht.
+Didaktisches Feedback und Spielsteuerung
+Zusätzliche Steuerungs- und Feedback-Elemente wie Skip-Optionen, Beenden-Funktionen, Tor-Popups und visuelle Rückmeldungen erhöhen die Verständlichkeit und Motivation.
+Touch- und Smartboard-Optimierung
+Die Benutzeroberfläche ist auf grosse Displays und projektionsbasierte Unterrichtssituationen ausgelegt, mit grossen Buttons, klaren Kontrasten und reduzierter Navigation.
+Kindgerechtes Design-Redesign
+Basierend auf der Evaluation wurde das gesamte visuelle Erscheinungsbild neu gestaltet. Der frühere, technisch geprägte Stil wurde durch einen farbigen, verspielten Aquarell-Look ersetzt, der besser auf Kinder abgestimmt ist.
 
 ## 4. Vorgehen & Artefakte
 Die Durchführung erfolgt phasenbasiert; dokumentieren Sie die wichtigsten Ergebnisse je Phase.
@@ -148,7 +161,7 @@ https://www.figma.com/make/cfst3nxuUHArpKiGawY1uk/EduPlay-Web-App-UI-Design?node
 2.  Fragen eingeben oder Datei hochladen
 3.  Teams erscheinen im Spiel
 4.  Frage wird angezeigt
-5.  Kinder klicken Antwort → richtig/falsch
+5.  Lehrer klicken Antwort → richtig/falsch
 6.  Ball bewegt sich
 7.  Nach X Fragen → Resultat (Team gewinnt)
 8.  „Neu starten“-Option
@@ -165,7 +178,7 @@ Es zeigt:
 -   Ergebnisanzeige
 
 ### 4.4 Prototype
-- **Kernfunktionalität:** _[Kurzbeschreibung der Workflows/Funktionen]_  
+- **Kernfunktionalität:**
 Der Prototyp enthält:
 -   start.svelte: Auswahl der Fächer
 -   login/register optional
@@ -187,7 +200,8 @@ Beschreibt die Gestaltung und Interaktion.
 -   Spiel → Fragen + Spielfeld
 -   Resultat → Gewinneranzeige + Neustart
 
-- **Oberflächenentwürfe:** _[wichtige Screens: Screenshots mit kurzer Erläuterung]_ 
+- **Oberflächenentwürfe:**
+  Die wichtigsten Screens umfassen die Fachauswahl, den Setup-Screen für Spieleinstellungen (z. B. Rechenart und Zahlenraum), die Spielansicht mit Spielfeld und Ballbewegung sowie die Ergebnisanzeige. Die Gestaltung orientiert sich am verlinkten Figma-Mockup und wurde für den Prototyp funktional vereinfacht umgesetzt.
 
 - **Designentscheidungen:** 
 -   Großflächige Buttons → für Smartboard geeignet
@@ -227,32 +241,46 @@ Fasst die technische Realisierung zusammen.
 -   Klarer, kindgerechter Stil
 
 ### 4.5 Validate
-- **URL der getesteten Version** (separat deployt)
+- **URL der getesteten Version**
+Die getestete Version entsprach dem zum Testzeitpunkt aktuellen Stand des Prototyps (separater Deployment-Stand).
 - **Ziele der Prüfung:** 
--   Verstehen Kinder den Spielablauf sofort?
--   Funktionieren Buttons und Ballbewegung intuitiv?
--   Sind Farben und Rückmeldungen klar?
--   Reagiert das UI gut auf Touch-Eingaben?
+- Überprüfen, ob Kinder den Spielablauf nach kurzer Erklärung verstehen
+- Einschätzen der Motivation und Spielfreude im Unterrichtskontext
+- Testen der Bedienbarkeit auf einer projektionsbasierten Touch-Lösung (Beamer)
+- Beobachten der Gruppendynamik im Team-Spielmodus
 
 - **Vorgehen:** 
--   Moderierter Kurztest direkt im Unterricht (heute, 1. Klasse Mathematik)
--   Einsatz auf dem Smartboard mit Touch-Eingaben
--   Lehrperson erklärt kurz den Ablauf, danach spielen die Kinder eigenständig mehrere Runden
--   Beobachtungen sowie spontane Rückmeldungen der Kinder werden protokolliert (Bedienung, Verständnis, Motivation)
+Der Test wurde moderiert in einer 1. Klasse in Reutlingen durchgeführt. Die Lehrperson erklärte den Ablauf kurz und führte anschliessend durch das Spiel. Die Kinder spielten in zwei Teams in Reihen; nach jeder Frage wechselten die vordersten Kinder nach hinten.
+Wichtig: Die Interaktion mit der Anwendung erfolgte nicht direkt durch die Kinder, sondern über die Lehrperson: Die Kinder gaben ihre Antwort mündlich, und die Lehrperson klickte die entsprechende Option auf der projizierten Oberfläche (Beamer). Dadurch lag der Fokus der Evaluation auf Verständnis, Motivation, Ablauf im Unterricht und auf der direkten Touch-Bedienbarkeit durch die Lehrperson.
 
 - **Stichprobe:** 
--   Eine erste Primarschulklasse (ca. 20 Kinder, Altersgruppe 7–8 Jahre)
+- Teilnehmende: 1. Klasse (zwei Gruppen)
+- Alter: ca. 6–7 Jahre
+- Ort: Schule in Reutlingen
+- Setting: Projektion via Beamer, Bedienung durch Lehrperson
 
 - **Aufgaben/Szenarien:** 
--   Ein komplettes Mathe-Spiel mit Addition/Subtraktion durchführen und Gewinner anzeigen
--   Eine Runde neu starten, um zu prüfen, ob Kinder ohne Anleitung zurück zum Setup gelangen
--   Während des Spiels gezielt falsche Antworten und Skip-Buttons auslösen, um Feedback/Timer zu beobachten
--   Mehrere Tore erzielen, damit Tor-Popup und Ball-Rücksetzung überprüft werden
+-   Durchführung eines vollständigen Spiels mit ca. 20 Fragen
+- Team-Spiel im Reihen-Setting mit Rollenwechsel nach jeder Frage
+- Beobachtung von Verständnis, Engagement und Reaktion auf Feedback (richtig/falsch, Ballbewegung)
 
-- **Kennzahlen & Beobachtungen:** _[z. B. Erfolgsquote, Zeitbedarf, qualitative Findings]_  
-- **Zusammenfassung der Resultate:** _[Wichtigste Erkenntnisse; 2–4 Sätze]_  
-- **Abgeleitete Verbesserungen:** _[priorisiert, kurz begründet]_  
-- **Umgesetzte Anpassungen [Optional]:** _[Im Prototyp umgesetzte Verbesserungen aufgrund der Erkenntnisse in der Evaluation]_ Idealerweise: Zwischenstände separat deployen, Änderungen dokumentieren.
+- **Kennzahlen & Beobachtungen:** 
+- Dauer: ca. 10 Minuten für 20 Fragen
+- Verständnis: Der Ablauf wurde nach kurzer Erklärung verstanden; das Spiel konnte ohne Unterbrechungen durchgeführt werden
+- Motivation: Hoch; Kinder waren engagiert und hatten sichtbar Spass am Team-Spiel
+- Ablauf im Unterricht: Der Reihenwechsel nach jeder Frage erzeugte zusätzliche Übergangszeit, war aber für die Klasse organisatorisch machbar
+- Design-Feedback: Das damalige Design wurde als nicht ausreichend kindgerecht/ansprechend wahrgenommen
+
+- **Zusammenfassung der Resultate:**
+Der Prototyp funktioniert im Unterrichtskontext als moderiertes Team-Spiel sehr gut: Die Klasse blieb motiviert, und der Ablauf war nach kurzer Einführung verständlich. Der grösste erkannte Verbesserungsbedarf lag weniger in der Spiellogik, sondern in der visuellen Gestaltung, damit die Anwendung stärker auf die Zielgruppe abgestimmt wirkt.
+
+- **Abgeleitete Verbesserungen:** 
+- Visuelles Redesign, um die Zielgruppe (1. Klasse) stärker anzusprechen
+- Erhöhung der Farbigkeit/Verspieltheit zur Steigerung der emotionalen Wirkung und Aufmerksamkeit
+
+- **Umgesetzte Anpassungen [Optional]:** 
+Nach dem Test wurde das gesamte Layout überarbeitet: Der ursprüngliche, eher nüchterne/„Developer-Tool“-Look wurde durch einen bunteren, kindgerechteren Aquarell-Stil ersetzt.
+
 
 
 ## 5. Erweiterungen [Optional]
@@ -279,19 +307,22 @@ https://github.com/florianshub314/eduplay
 
 /src
   /routes
-    /start
-    /mathe
-    /deutsch
-    /englisch
-    /franzoesisch
-    /andere
-    /login
+    /start            → Einstieg & Fachauswahl
+    /mathe            → Mathematik-Workflow
+    /deutsch          → Deutsch-Workflow
+    /englisch         → Englisch-Workflow
+    /franzoesisch     → Französisch-Workflow
+    /andere           → Weitere Fächer
+    /game             → Spielansicht
+    /sets             → Gespeicherte Fragen-Sets
+    /login            → Authentifizierung
+    /profil           → Profilverwaltung
     +layout.svelte
     +page.svelte
   /lib
-    /components
-    /stores
-/static
+    /components       → Wiederverwendbare UI-Komponenten
+    /stores           → Globale Zustände (Spielstatus, Ballposition etc.)
+/static               → Statische Assets
 README.md
 package.json
 svelte.config.js
@@ -315,43 +346,54 @@ Aktuelle Beispiele für offene Issues:
 -   Touch-Optimierung verbessern
 -   Komponenten refactoren (GameField, QuestionCard)
 
-- **Commit‑Praxis:** _[z. B. sprechende Commits]_
+- **Commit‑Praxis:** 
+  Die Entwicklung erfolgte iterativ mit regelmässigen, sprechenden Commit-Messages, die jeweils klar beschreiben, welche Funktion oder welcher Bereich angepasst wurde (z. B. update subject pages and documentation).
 
 ## 7. KI‑Deklaration
 Die folgende Deklaration ist verpflichtend und beschreibt den Einsatz von KI im Projekt.
 
 ### Eingesetzte KI‑Werkzeuge
-ChatGPT 5.1(Unterstützung bei Konzeptentwicklung, Problemlösung, Codevorschlägen, Fehlersuche und Dokumentation)
+ChatGPT (GPT-5.x) – eingesetzt als unterstützendes Werkzeug bei Konzeption, Strukturierung, Code-Ideen und Dokumentation.
 
 ### Zweck & Umfang
--   Konzeptentwicklung & Strukturierung
-Unterstützung bei der Ausarbeitung der Grundidee von EduPlay, Strukturieren der Dokumentation, Formulieren der Zielsetzung und der Methode (Understand, Sketch, Decide, Prototype, Validate).
--   Codevorschläge & Problemlösung
-KI wurde verwendet für:
-Vorschläge für SvelteKit-Komponenten
-Hilfe bei Routing-Problemen
-Erstellen von Stores (z. B. Spielzustand, Ballposition)
-Unterstützung bei Layout-Problemen und Responsive Design
-Generieren von Beispielcode für Features (Ballbewegung, Buttons, Spielfeld)
--   Textentwürfe & Dokumentation
-KI half beim Formulieren der README, beim Erklären von Vorgehensschritten und beim Aufbau der Kapitel
--   Reflexion & Qualität
-KI wurde genutzt, um mögliche Verbesserungen im UX-Design und in der Projektorganisation zu identifizieren.
+Die KI wurde unterstützend eingesetzt zur:
+- Strukturierung der Projektidee und der README-Dokumentation
+- Generierung von Textentwürfen (z. B. Zielsetzung, Vorgehensbeschreibung)
+- Erarbeitung von Lösungsvorschlägen für SvelteKit-Komponenten, Spiel-Logik (Ballbewegung, Spielzustand) und Routing
+U- nterstützung bei Debugging, Refactoring-Ideen und UX-Verbesserungen
+Die KI diente ausschliesslich als Hilfsmittel. Alle Vorschläge wurden kritisch geprüft, angepasst und eigenständig implementiert.
 
 ### Art der Beiträge
-_[konkret: welche Teile stammen (ganz/teilweise) aus KI‑Unterstützung?]_
+Die KI lieferte:
+- Textentwürfe und Formulierungsvorschläge für Teile der Dokumentation
+- Beispielcode und Logik-Skizzen für Spielmechaniken, Komponentenstruktur und Zustandsverwaltung
+- UX-Ideen zur Verbesserung der Bedienbarkeit auf Touch-Geräten
+Kein KI-generierter Code oder Text wurde ungeprüft übernommen.
 
 ### Eigene Leistung (Abgrenzung)
-_[was ist eigenständig erarbeitet/überarbeitet worden?]_
+Die eigenständige Leistung umfasst:
+- Ausarbeitung der Projektidee und funktionalen Anforderungen
+- Vollständige Implementierung des Prototyps in SvelteKit
+- Technische Entscheidungen (Architektur, Komponenten, State-Handling, APIs, Deployment)
+- Planung, Durchführung und Auswertung der Nutzertests
+- Finales Layout, Designanpassungen und Feinschliff
+Die Verantwortung für Funktionalität, Qualität und Korrektheit liegt vollständig beim Studierenden.
 
 ### Reflexion
-_[Nutzen, Grenzen, Risiken/Qualitätssicherung]_
+Der Einsatz von KI beschleunigte insbesondere die Ideenfindung und Strukturierung komplexer Teile des Projekts. Gleichzeitig war eine kritische Prüfung notwendig, da generische Vorschläge häufig an die konkrete Unterrichtssituation, Zielgruppe und technische Architektur angepasst werden mussten. KI ersetzt keine eigene Konzeption, sondern unterstützt gezielt bei Effizienz und Qualitätssicherung.
 
 ### Prompt‑Vorgehen [Optional]
-_[wichtige Prompts/Workflows in Kürze]_
+Die KI wurde nicht mit einem einzelnen Grossprompt eingesetzt, sondern iterativ in kurzen, zielgerichteten Abfragen. Typische Prompts bezogen sich auf klar abgegrenzte Probleme, z. B. die Strukturierung eines Spiel-Workflows, die Logik der Ballbewegung oder die Vereinfachung von UI-Flows für Kinder.
+Der Ablauf war jeweils:
+1. Problem formulieren (z. B. unklarer Spielablauf, zu kleine Touch-Ziele).
+2. Lösungsvorschläge der KI einholen (Code-Skizzen, Ablaufbeschreibungen, UX-Ideen).
+3. Manuelle Bewertung und Auswahl der passenden Ansätze.
+4. Eigenständige Umsetzung und Anpassung im bestehenden Code- und Designkontext.
+5. Testen im Prototyp und erneute Anpassung bei Bedarf.
+Prompts wurden bewusst konkret und technisch gehalten (z. B. bezogen auf SvelteKit-Komponenten, Spielzustände oder Touch-Interaktionen), um generische Antworten zu vermeiden. Die finale Ausgestaltung erfolgte stets eigenständig im Code und im Design.
 
 ### Quellen & Rechte [Optional]
-_[verwendete Vorlagen/Assets/Modelle; Lizenz/Urheberrecht; Zitierweise]_
+Alle verwendeten Texte, Designs und Code-Anpassungen wurden selbst erstellt oder basieren auf frei verfügbaren Technologien und Frameworks (SvelteKit). Es wurden keine urheberrechtlich geschützten Inhalte ohne Lizenz übernommen.
 
 ## 8. Anhang [Optional]
 Beispiele:

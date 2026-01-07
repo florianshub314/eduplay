@@ -68,8 +68,8 @@
         <p class="eyebrow">Fächer</p>
         <h1>Wähle dein Spielfeld und starte sofort.</h1>
         <p class="lede">
-          Klick auf ein Fach, spring direkt ins Spiel oder greif auf deine gespeicherten Sets zu. Das
-          Layout und die Farben passen jetzt zum Deutsch-Flow.
+          Klick auf ein Fach, spring direkt ins Spiel oder greif auf deine gespeicherten Sets zu. Alles
+          ist klar strukturiert und touchfreundlich.
         </p>
         <div class="cta-row">
           <button class="cta-button primary" type="button" on:click={scrollToSubjects}>
@@ -124,10 +124,10 @@
   <section class="subjects" id="subjects" bind:this={subjectsSection}>
     <div class="section-heading">
       <p class="eyebrow">Alle Fächer</p>
-      <h2>Im selben Look wie Deutsch</h2>
+      <h2>Wähle dein Fach und starte</h2>
       <p class="section-lede">
-        Wähle ein Fach oder spring direkt zu den gespeicherten Sets. Karten, Schatten und Farben sind
-        identisch zum Deutsch-Flow.
+        Wähle ein Fach oder spring direkt zu den gespeicherten Sets. Karten und Schatten sind überall
+        gleich klar, egal womit du startest.
       </p>
     </div>
     <div class="subject-grid">

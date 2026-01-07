@@ -480,7 +480,7 @@ let winnerSubtitle = "";
           on:back={goBack}
           on:start={generateQuestions}
         >
-          <div class="extra-settings inline-settings">
+                    <div class="extra-settings inline-settings">
             <label class="topic-label">
               Thema (optional)
               <input
@@ -489,51 +489,9 @@ let winnerSubtitle = "";
                 bind:value={topic}
               />
             </label>
-
-            <div class="file-row">
-              <FileDropzone
-                label="Unterrichtsmaterial (TXT oder PDF)"
-                accept=".txt,.pdf"
-                on:change={handleFileUpload}
-                fileName={file?.name}
-                loading={aiLoading}
-              />
-              {#if fileError}
-                <p class="file-error">{fileError}</p>
-              {/if}
-              {#if aiLoading}
-                <p class="file-info">🤖 KI analysiert das Material …</p>
-              {/if}
-              {#if aiError}
-                <p class="file-error">{aiError}</p>
-              {/if}
-            </div>
-
-            <label class="toggle">
-              <input type="checkbox" bind:checked={useManualInput} />
-              Eigene Aufgaben manuell eingeben
-            </label>
-
-            {#if useManualInput}
-              <textarea
-                rows="5"
-                placeholder={"Eine Aufgabe pro Zeile\\nFrage zu Fotosynthese\\nWas bedeutet Recycling?"}
-                bind:value={manualInput}
-                on:input={processManualInput}
-              ></textarea>
-            {/if}
-
-            <label class="instructions-label">
-              KI-Hinweis zum Material (optional)
-              <textarea
-                rows="3"
-                placeholder={"z. B. nur die ersten Seiten nutzen oder bitte Multiple-Choice Fragen erstellen"}
-                bind:value={aiInstructions}
-              ></textarea>
-            </label>
           </div>
 
-          <div class="settings-stack">
+<div class="settings-stack">
             <div class="extra-settings side-panel">
               <FileDropzone
                 label="Unterrichtsmaterial (TXT oder PDF)"
@@ -597,7 +555,7 @@ let winnerSubtitle = "";
                 <p class="eyebrow">Bereit?</p>
                 <h3>Gleicher Rahmen für jedes Fach</h3>
                 <p class="section-lede compact-copy">
-                  Thema wählen, Material oder KI nutzen – alles in einem Block wie bei Deutsch.
+                  Thema wählen, Material oder KI nutzen – alles in einem Block für dein Fach.
                 </p>
                 <ul class="mini-list">
                   <li>Thema festhalten (optional)</li>

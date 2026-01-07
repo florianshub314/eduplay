@@ -702,54 +702,6 @@ let winnerSubtitle = "";
                 {/each}
               </div>
             </div>
-
-            <div class="material-section">
-              <p class="group-label">Unterrichtsmaterial (optional)</p>
-              <FileDropzone
-                label="Datei (TXT oder PDF)"
-                accept=".txt,.pdf"
-                on:change={handleFileUpload}
-                fileName={file?.name}
-                loading={aiLoading}
-                description="Ziehe das Material hierher oder tippe zum Auswählen."
-              />
-              {#if fileError}
-                <p class="file-error">{fileError}</p>
-              {/if}
-              {#if aiError}
-                <p class="file-error">{aiError}</p>
-              {/if}
-
-              <label class="toggle">
-                <input type="checkbox" bind:checked={useManualInput} />
-                <span>Eigene Aufgaben manuell eingeben</span>
-              </label>
-
-              {#if useManualInput}
-                <textarea
-                  rows="4"
-                  placeholder={"Eine Aufgabe pro Zeile\\n12 + 7\\nWie viele Ecken hat ein Würfel?"}
-                  bind:value={manualInput}
-                  on:input={processManualInput}
-                ></textarea>
-              {/if}
-
-              {#if availableCustomQuestions > 0}
-                <p class="file-info">
-                  {availableCustomQuestions} eigene Aufgaben verfügbar
-                </p>
-              {/if}
-
-              <label class="group-label" for="math-ai-instructions">
-                Zusatzwünsche an die KI (optional)
-              </label>
-              <textarea
-                id="math-ai-instructions"
-                rows="3"
-                placeholder="z. B. leichte Sachaufgaben, Fokus auf Division ..."
-                bind:value={aiInstructions}
-              ></textarea>
-            </div>
           </div>
 
           <div class="settings-stack">
@@ -800,12 +752,11 @@ let winnerSubtitle = "";
               ></textarea>
 
               <div class="compact-card inline">
-                <p class="eyebrow">Bereit zum Start?</p>
-                <h3>Mathe-Set in buntem Rahmen</h3>
-                <p class="section-lede compact-copy">
-                  Gleiches Layout wie Deutsch – nur der Inhalt ändert sich: Zahlenraum, Rechenarten und
-                  optionale Aufgabenquellen.
-                </p>
+          <p class="eyebrow">Bereit zum Start?</p>
+          <h3>Mathe-Set aufbauen</h3>
+          <p class="section-lede compact-copy">
+            Zahlenraum, Rechenarten und optionale Aufgabenquellen – alles hier gebündelt.
+          </p>
                 <ul class="mini-list">
                   <li>Rechenarten auswählen und kombinieren</li>
                   <li>Eigene Aufgaben via TXT/PDF oder manuell</li>

@@ -529,52 +529,7 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
         >
           <div class="extra-settings inline-settings">
             <p class="group-label">Contenu (optionnel)</p>
-            <div class="file-row">
-              <FileDropzone
-                label="Fichier (TXT ou PDF)"
-                accept=".txt,.pdf"
-                on:change={handleFileUpload}
-                fileName={file?.name}
-                loading={aiLoading}
-                description="Dépose le fichier ici ou clique pour l'importer."
-              />
-              {#if fileError}
-                <p class="file-error">{fileError}</p>
-              {/if}
-              {#if aiLoading}
-                <p class="file-info">🤖 La KI crée des questions …</p>
-              {/if}
-              {#if aiError}
-                <p class="file-error">{aiError}</p>
-              {/if}
-            </div>
-
-            <label class="toggle">
-              <input type="checkbox" bind:checked={useManualInput} />
-              Saisir les questions manuellement
-            </label>
-
-            {#if useManualInput}
-              <textarea
-                rows="6"
-                placeholder={"Exemples:\\nHaus;maison\\nKatze;chat"}
-                bind:value={manualInput}
-                on:input={processManualInput}
-              ></textarea>
-            {/if}
-
-            <label class="toggle">
-              <input type="checkbox" bind:checked={useAiGenerator} />
-              Laisser la KI créer les questions
-            </label>
-
-            {#if useAiGenerator}
-              <textarea
-                rows="3"
-                placeholder="Consignes supplémentaires pour la KI (optionnel)"
-                bind:value={aiInstructions}
-              ></textarea>
-            {/if}
+            <p class="file-info">Utilise le bloc ci-dessous pour le matériel ou l’IA.</p>
           </div>
 
           <div class="settings-stack">
@@ -629,7 +584,7 @@ import WinnerPopup from "$lib/components/game/WinnerPopup.svelte";
                 <p class="eyebrow">Prêt ?</p>
                 <h3>Même cadre, contenu français</h3>
                 <p class="section-lede compact-copy">
-                  Identique à Deutsch: équipes, matériel TXT/PDF ou saisie manuelle, plus IA au besoin.
+                  Équipes, matériel TXT/PDF ou saisie manuelle, plus IA au besoin – tout en français.
                 </p>
                 <ul class="mini-list">
                   <li>TXT/PDF ou saisie manuelle</li>
