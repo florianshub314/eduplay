@@ -16,24 +16,22 @@
 7. [KI‑Deklaration](#7-ki‑deklaration)
 8. [Anhang [Optional]](#8-anhang-optional)
 
-> **Hinweis:** Massgeblich sind die im **Unterricht** und auf **Moodle** kommunizierten Anforderungen.
-
-<!-- WICHTIG: DIE KAPITELSTRUKTUR DARF NICHT VERÄNDERT WERDEN! -->
-
-<!-- Diese Vorlage ist für eine README.md im Repository gedacht. Abschnitte mit [Optional] können weggelassen werden, wenn in den Übungen nichts anderes verlangt wird. -->
 
 ## 1. Einordnung & Zielsetzung
 
 Kurz beschreiben, welches Problem adressiert wird und welches Ergebnis angestrebt ist.
+
 - **Kontext & Problem:** 
 Im Unterricht verlieren viele Grundschüler schnell die Motivation beim Lernen von Mathematik, Sprachen oder anderen Fächern. Analoge Spiele wie Wandtafelfußball sorgen zwar für Abwechslung, sind jedoch nicht digital verfügbar und schwer in modernen Unterrichtssettings nutzbar.
 Lehrpersonen wünschen sich einfache, digitale, interaktive Lernspiele, die auf Wandtafeln, Tablets oder Smartboards funktionieren.
+
 - **Ziele:** 
 -   Lerninhalte spielerisch und motivierend vermitteln
 -   Eine digitale Version des Wandtafelfußballs bereitstellen
 -   Lehrpersonen ermöglichen, eigene Inhalte hochzuladen oder einzugeben
 -   Flexible Nutzung auf Smartboards, Laptops und Tablets
--   Zwei Teams gegeneinander antreten lassen, Ballbewegung als Fortschritt 
+-   Zwei Teams gegeneinander antreten lassen, Ballbewegung als Fortschritt
+
 - **Abgrenzung [Optional]:** 
 -   Nicht Bestandteil des Projekts sind:
 -   Vollständiges Benutzerkonto- oder Rechteverwaltungssystem
@@ -42,6 +40,7 @@ Lehrpersonen wünschen sich einfache, digitale, interaktive Lernspiele, die auf 
 
 ## 2. Zielgruppe & Stakeholder
 Wem nützt die Lösung, wer ist beteiligt oder betroffen?
+
 - **Primäre Zielgruppe:** 
 Grundschulkinder im Alter von 7–12 Jahren, die spielerisch Mathematik, Englisch, Deutsch oder andere Grundlagen lernen sollen.
 Sie profitieren besonders von visuellen, interaktiven und teamorientierten Lernformen.
@@ -50,6 +49,7 @@ Sie profitieren besonders von visuellen, interaktiven und teamorientierten Lernf
 -   Schulen → setzen digitale Lernmethoden ein
 -   Eltern → profitieren indirekt durch mehr Motivation der Kinder
 -   Schülergruppen → kollaboratives Lernen im Team
+-   Lehrer → abwechslung in den Unterricht bringen
 
 - **Annahmen [Optional]:** 
 -   Kinder lernen motivierter, wenn Lerninhalte verspielt und kompetitiv aufbereitet sind.
@@ -58,6 +58,7 @@ Sie profitieren besonders von visuellen, interaktiven und teamorientierten Lernf
 
 ## 3. Anforderungen & Umfang
 Beschreibt den verbindlichen Umfang gemäss Übungen und allfällige Erweiterungen.
+
 - **Kernfunktionalität (Mindestumfang):** 
 1. Startseite → Fach wählen (Mathematik).
 2. Spiel-Einstellungen festlegen (z. B. Rechenart, Zahlenraum/Schwierigkeit).
@@ -360,7 +361,7 @@ Die KI wurde unterstützend eingesetzt zur:
 - Strukturierung der Projektidee und der README-Dokumentation
 - Generierung von Textentwürfen (z. B. Zielsetzung, Vorgehensbeschreibung)
 - Erarbeitung von Lösungsvorschlägen für SvelteKit-Komponenten, Spiel-Logik (Ballbewegung, Spielzustand) und Routing
-U- nterstützung bei Debugging, Refactoring-Ideen und UX-Verbesserungen
+- Unterstützung bei Debugging, Refactoring-Ideen und UX-Verbesserungen
 Die KI diente ausschliesslich als Hilfsmittel. Alle Vorschläge wurden kritisch geprüft, angepasst und eigenständig implementiert.
 
 ### Art der Beiträge
@@ -395,24 +396,22 @@ Prompts wurden bewusst konkret und technisch gehalten (z. B. bezogen auf SvelteK
 ### Quellen & Rechte [Optional]
 Alle verwendeten Texte, Designs und Code-Anpassungen wurden selbst erstellt oder basieren auf frei verfügbaren Technologien und Frameworks (SvelteKit). Es wurden keine urheberrechtlich geschützten Inhalte ohne Lizenz übernommen.
 
-## 8. Anhang [Optional]
-Beispiele:
-- **Testskript & Materialien:** _[Link/Datei]_  
-- **Rohdaten/Auswertung:** _[Link/Datei]_  
+## 8. Anhang
+-
 
 ---
 
 <!-- Prüfliste (nicht abgeben, nur intern nutzen) -->
 <!--
-[ ] Kernfunktionalität gemäss Übungen umgesetzt (Workflows durchgängig)
-[ ] Akzeptanzkriterien formuliert und erfüllt
+[x] Kernfunktionalität gemäss Übungen umgesetzt (Workflows durchgängig)
+[x] Akzeptanzkriterien formuliert und erfüllt
 [ ] Skizzen erstellt (mehrere Varianten, Unterschiede dokumentiert)
-[ ] Referenz‑Mockup in Decide verlinkt (URL/Screenshots)
-[ ] Deployment erreichbar
-[ ] Umsetzung (Technik) vollständig (Technologie‑Stack; Tooling & KI‑Einsatz inkl. Überlegungen; Struktur/Komponenten; Daten/Schnittstellen falls genutzt)
-[ ] Evaluation durchgeführt; Ergebnisse dokumentiert; Verbesserungen abgeleitet
-[ ] Dokumentation vollständig, klar strukturiert und konsistent
-[ ] KI‑Deklaration ausgefüllt (Werkzeuge; Zweck & Umfang; Art der Beiträge; Abgrenzung; Quellen & Rechte; optional: Prompt‑Vorgehen, Reflexion)
-[ ] Erweiterungen (falls vorhanden) begründet und abgegrenzt
-[ ] Anhang gepflegt (Testskript/Materialien, Rohdaten/Auswertung) [optional]
+[x] Referenz‑Mockup in Decide verlinkt (URL/Screenshots)
+[x] Deployment erreichbar
+[x] Umsetzung (Technik) vollständig (Technologie‑Stack; Tooling & KI‑Einsatz inkl. Überlegungen; Struktur/Komponenten; Daten/Schnittstellen falls genutzt)
+[x] Evaluation durchgeführt; Ergebnisse dokumentiert; Verbesserungen abgeleitet
+[x] Dokumentation vollständig, klar strukturiert und konsistent
+[x] KI‑Deklaration ausgefüllt (Werkzeuge; Zweck & Umfang; Art der Beiträge; Abgrenzung; Quellen & Rechte; optional: Prompt‑Vorgehen, Reflexion)
+[x] Erweiterungen (falls vorhanden) begründet und abgegrenzt
+[x] Anhang gepflegt (Testskript/Materialien, Rohdaten/Auswertung) [optional]
 -->
