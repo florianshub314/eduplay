@@ -11,8 +11,8 @@
     - [Decide](#43-decide)
     - [Prototype](#44-prototype)
     - [Validate](#45-validate)
-5. [Erweiterungen [Optional](#5-erweiterungen-optional)
-6. [Projektorganisation [Optional](#6-projektorganisation-optional)
+5. [Erweiterungen] [Optional](#5-erweiterungen-optional)
+6. [Projektorganisation] [Optional](#6-projektorganisation-optional)
 7. [KI‑Deklaration](#7-ki‑deklaration)
 8. [Anhang [Optional]](#8-anhang-optional)
 
@@ -139,6 +139,8 @@ Ziel von EduPlay ist es, Lernstoff spielerisch zu vermitteln und Lehrer*innen ei
 -   gute Übersicht, aber wenig Wettbewerb
 
 - **Skizzen:** 
+Erste Skizzen:
+- `static/ErsteMockups.pdf`
 Die finalen Skizzen sind im Figma-Board ersichtlich:
 Figma-Prototyp:
 https://www.figma.com/make/cfst3nxuUHArpKiGawY1uk/EduPlay-Web-App-UI-Design?node-id=0-1&p=f&t=o1f7xIHvjvthSd1Z-0&fullscreen=1
@@ -167,7 +169,7 @@ https://www.figma.com/make/cfst3nxuUHArpKiGawY1uk/EduPlay-Web-App-UI-Design?node
 7.  Nach X Fragen → Resultat (Team gewinnt)
 8.  „Neu starten“-Option
 
-- **Referenz‑Mockup:** _[URL, Screenshots mit kurzen Beschreibungen]_  
+- **Referenz‑Mockup:**   
 Das Mockup befindet sich vollständig im Figma:
 https: (siehe oben)
 Es zeigt:
@@ -224,7 +226,7 @@ Fasst die technische Realisierung zusammen.
 -   KI-Unterstützung (Dokumentation & Code)
 -   Figma für Mockups
 
-- **Struktur & Komponenten:** _[Seiten, Routen, State/Stores, wichtige Komponenten]_
+- **Struktur & Komponenten:** 
 -   /src/routes/+page.svelte → Landing (Gast/Login-Auswahl)
 -   /src/routes/start/+page.svelte → Fachwahl & Einstieg
 -   /src/routes/mathe|deutsch|englisch|franzoesisch|andere/+page.svelte → jeweilige Spiel-Workflows inkl. Frage-Import, KI-Generator, Spiellogik
@@ -235,7 +237,7 @@ Fasst die technische Realisierung zusammen.
 -   /src/lib/components/inputs/FileDropzone.svelte → Drag&Drop Upload
 -   /src/lib/utils/*.js → Parser (PDF/TXT), Formatter, Random-Helper, AI-Brücke, Supabase-Speicher
 
-- **Daten & Schnittstellen [Optional]:** _[Datenquellen, API‑Entwürfe, Modelle]_
+- **Daten & Schnittstellen [Optional]:** 
 - **Besondere Entscheidungen:** 
 -   Einheitliches Button-Design für alle Fächer
 -   Wiederverwendbare Komponenten
@@ -243,7 +245,7 @@ Fasst die technische Realisierung zusammen.
 
 ### 4.5 Validate
 - **URL der getesteten Version**
-Die getestete Version entsprach dem zum Testzeitpunkt aktuellen Stand des Prototyps (separater Deployment-Stand).
+Die getestete Version entsprach dem zum Testzeitpunkt aktuellen Stand des Prototyps.
 - **Ziele der Prüfung:** 
 - Überprüfen, ob Kinder den Spielablauf nach kurzer Erklärung verstehen
 - Einschätzen der Motivation und Spielfreude im Unterrichtskontext
@@ -271,6 +273,9 @@ Wichtig: Die Interaktion mit der Anwendung erfolgte nicht direkt durch die Kinde
 - Motivation: Hoch; Kinder waren engagiert und hatten sichtbar Spass am Team-Spiel
 - Ablauf im Unterricht: Der Reihenwechsel nach jeder Frage erzeugte zusätzliche Übergangszeit, war aber für die Klasse organisatorisch machbar
 - Design-Feedback: Das damalige Design wurde als nicht ausreichend kindgerecht/ansprechend wahrgenommen
+
+Die Beobachtungen finden Sie unter:
+- `static/BewertungNadine.pdf`
 
 - **Zusammenfassung der Resultate:**
 Der Prototyp funktioniert im Unterrichtskontext als moderiertes Team-Spiel sehr gut: Die Klasse blieb motiviert, und der Ablauf war nach kurzer Einführung verständlich. Der grösste erkannte Verbesserungsbedarf lag weniger in der Spiellogik, sondern in der visuellen Gestaltung, damit die Anwendung stärker auf die Zielgruppe abgestimmt wirkt.
@@ -397,21 +402,6 @@ Prompts wurden bewusst konkret und technisch gehalten (z. B. bezogen auf SvelteK
 Alle verwendeten Texte, Designs und Code-Anpassungen wurden selbst erstellt oder basieren auf frei verfügbaren Technologien und Frameworks (SvelteKit). Es wurden keine urheberrechtlich geschützten Inhalte ohne Lizenz übernommen.
 
 ## 8. Anhang
--
+Eine zusätzliche Bewertung des Prototyps finden Sie unter:
+- `static/BewertungJannis.pdf`
 
----
-
-<!-- Prüfliste (nicht abgeben, nur intern nutzen) -->
-<!--
-[x] Kernfunktionalität gemäss Übungen umgesetzt (Workflows durchgängig)
-[x] Akzeptanzkriterien formuliert und erfüllt
-[ ] Skizzen erstellt (mehrere Varianten, Unterschiede dokumentiert)
-[x] Referenz‑Mockup in Decide verlinkt (URL/Screenshots)
-[x] Deployment erreichbar
-[x] Umsetzung (Technik) vollständig (Technologie‑Stack; Tooling & KI‑Einsatz inkl. Überlegungen; Struktur/Komponenten; Daten/Schnittstellen falls genutzt)
-[x] Evaluation durchgeführt; Ergebnisse dokumentiert; Verbesserungen abgeleitet
-[x] Dokumentation vollständig, klar strukturiert und konsistent
-[x] KI‑Deklaration ausgefüllt (Werkzeuge; Zweck & Umfang; Art der Beiträge; Abgrenzung; Quellen & Rechte; optional: Prompt‑Vorgehen, Reflexion)
-[x] Erweiterungen (falls vorhanden) begründet und abgegrenzt
-[x] Anhang gepflegt (Testskript/Materialien, Rohdaten/Auswertung) [optional]
--->
