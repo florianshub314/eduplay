@@ -11,8 +11,8 @@
     - [Decide](#43-decide)
     - [Prototype](#44-prototype)
     - [Validate](#45-validate)
-5. [Erweiterungen] [Optional](#5-erweiterungen-optional)
-6. [Projektorganisation] [Optional](#6-projektorganisation-optional)
+5. [Erweiterungen [Optional]](#5-erweiterungen-optional)
+6. [Projektorganisation [Optional]](#6-projektorganisation-optional)
 7. [KI‑Deklaration](#7-ki‑deklaration)
 8. [Anhang [Optional]](#8-anhang-optional)
 
@@ -404,4 +404,3 @@ Alle verwendeten Texte, Designs und Code-Anpassungen wurden selbst erstellt oder
 ## 8. Anhang
 Eine zusätzliche Bewertung des Prototyps finden Sie unter:
 - `static/BewertungJannis.pdf`
-
